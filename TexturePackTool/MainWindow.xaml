@@ -5,8 +5,113 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TexturePackTool"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Texture Pack Tool">
+    <Window.CommandBindings>
+        <CommandBinding Command="New" Executed="InvokeCommandNew"/>
+        <CommandBinding Command="Open" Executed="InvokeCommandOpen"/>
+        <CommandBinding Command="Save" Executed="InvokeCommandSave"/>
+        <CommandBinding Command="SaveAs" Executed="InvokeCommandSaveAs"/>
+    </Window.CommandBindings>
+    <Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="New"/>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="Open"/>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="Save"/>
+        <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="SaveAs"/>
+    </Window.InputBindings>
     <Grid>
-        
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0" VerticalAlignment="Top">
+            <MenuItem Header="File">
+                <MenuItem Header="Save" Command="Save" InputGestureText="Ctrl+S"/>
+                <MenuItem Header="Save As" Command="SaveAs" InputGestureText="Ctrl+Shift+S"/>
+                <MenuItem Header="Open" Command="Open" InputGestureText="Ctrl+O"/>
+                <MenuItem Header="New" Command="New" InputGestureText="Ctrl+N"/>
+            </MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Prevent interpolation artifacts?" Click="ChkbxPreventInterpolationArtifacts_Click" IsCheckable="True" IsChecked="True"/>
+                <Separator />
+                <MenuItem Header="Remove across sprite sheets" Click="RemoveAcrossSpritesheets_Click"/>
+            </MenuItem>
+        </Menu>
+        <Grid Grid.Row="1" Margin="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="0"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Center"
+                Padding="4"
+            >
+                Sprite sheet
+            </TextBlock>
+            <ListView
+                x:Name="spriteSheetView"
+                Grid.Column="0"
+                Grid.Row="1" 
+                MinHeight="100"
+                MinWidth="100"
+            />
+            <Button
+                x:Name="AddSpriteSheet"
+                Grid.Column="0"
+                Grid.Row="2"
+                Padding="4"
+                Margin="0 4 0 4"
+            >
+                Add
+            </Button>
+            <TextBlock
+                Grid.Column="0"
+                Grid.Row="3"
+                FontWeight="SemiBold"
+                HorizontalAlignment="Center"
+                Padding="4"
+            >
+                Included files
+            </TextBlock>
+            <ListView
+                x:Name="filesView"
+                Grid.Column="0"
+                Grid.Row="4"
+                MinHeight="200"
+                MinWidth="200"
+            />
+            <Button
+                x:Name="AddFile"
+                Grid.Column="0"
+                Grid.Row="5"
+                Padding="4"
+                Margin="0 4 0 4">
+                Add
+            </Button>
+            <StackPanel
+                Grid.Column="1"
+                Orientation="Horizontal"
+            >
+                <TextBlock>Hello friend</TextBlock>
+                <TextBox>Test</TextBox>
+            </StackPanel>
+            <Image
+                x:Name="RenderedImage"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="20"
+                MinHeight="40"
+            />
+        </Grid>
     </Grid>
 </Window>

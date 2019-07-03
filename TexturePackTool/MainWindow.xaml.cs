@@ -24,5 +24,39 @@ namespace TexturePackTool
         {
             InitializeComponent();
         }
+
+        #region Handlers for menu -> File
+        private void InvokeCommandNew(object sender, ExecutedRoutedEventArgs e)
+        {
+
+        }
+
+        private void InvokeCommandOpen(object sender, ExecutedRoutedEventArgs e)
+        {
+
+        }
+
+        private void InvokeCommandSave(object sender, ExecutedRoutedEventArgs e)
+        {
+
+        }
+
+        private void InvokeCommandSaveAs(object sender, ExecutedRoutedEventArgs e)
+        {
+
+        }
+        #endregion
+
+        #region Handlers for menu -> Edit
+        private void ChkbxPreventInterpolationArtifacts_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+
+        private void RemoveAcrossSpritesheets_Click(object sender, RoutedEventArgs e)
+        {
+
+        }
+        #endregion
     }
 }
