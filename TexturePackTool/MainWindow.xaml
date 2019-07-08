@@ -36,13 +36,13 @@
             <MenuItem Header="New" Command="New" InputGestureText="Ctrl+N"/>
             <MenuItem Header="Open" Command="Open" InputGestureText="Ctrl+O"/>
             <MenuItem Header="Save" Command="Save" InputGestureText="Ctrl+S"/>
-            <MenuItem Header="Save As" Command="SaveAs" InputGestureText="Ctrl+Shift+S"/>
+            <MenuItem Header="Save As" Click="InvokeMenuExport"/>
         </Menu>
         <TabControl
             x:Name="SpritesheetsList"
             Grid.Column="0"
             Grid.Row="1"
-            Margin="4">
-        </TabControl>
+            Margin="4"
+        />
     </Grid>
 </Window>

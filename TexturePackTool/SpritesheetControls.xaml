@@ -5,47 +5,51 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              mc:Ignorable="d" 
              d:DesignWidth="800">
-    <StackPanel>
-        <StackPanel Orientation="Horizontal">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto"/>
+            <RowDefinition/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0" Orientation="Horizontal">
             <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Margin="4">Included files (frames)</TextBlock>
             <Button
-                x:Name="AddFromFileBttn"
-                Margin="4"
-                Padding="4"
-            >
+            x:Name="AddFromFileBttn"
+            Margin="4"
+            Padding="4"
+        >
                 Add from files
             </Button>
             <TextBlock
-                FontWeight="SemiBold"
-                Margin="62 4 4 4"
-                VerticalAlignment="Center"
-            >
-                Sprite sheet name:
+            FontWeight="SemiBold"
+            Margin="62 4 4 4"
+            VerticalAlignment="Center"
+        >
+            Sprite sheet name:
             </TextBlock>
             <TextBox
-                x:Name="SpriteSheetName"
-                Margin="4"
-                MaxWidth="200"
-                MinWidth="100"
-                VerticalContentAlignment="Center"
-            />
+            x:Name="SpriteSheetName"
+            Margin="4"
+            MaxWidth="200"
+            MinWidth="100"
+            VerticalContentAlignment="Center"
+        />
         </StackPanel>
-        <DataGrid x:Name="SpriteSheetFrames" AutoGenerateColumns="False">
+        <DataGrid Grid.Row="1" x:Name="SpriteSheetFrames" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn
-                    x:Name="EntryFile"
-                    Binding="{Binding Path=RelativePath}"
-                    Header="File"
-                    Width="2*"
-                    IsReadOnly="True"
-                />
+                x:Name="EntryFile"
+                Binding="{Binding Path=RelativePath}"
+                Header="File"
+                Width="2*"
+                IsReadOnly="True"
+            />
                 <DataGridTextColumn
-                    x:Name="EntryName"
-                    Binding="{Binding Path=Name}"
-                    Header="Frame name"
-                    Width="*"
-                />
+                x:Name="EntryName"
+                Binding="{Binding Path=Name}"
+                Header="Frame name"
+                Width="*"
+            />
             </DataGrid.Columns>
         </DataGrid>
-    </StackPanel>
+    </Grid>
 </UserControl>

@@ -1,6 +1,8 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.ComponentModel;
 using System.IO;
+using System.Windows.Media.Imaging;
 
 namespace TexturePackTool.Model
 {
@@ -17,6 +19,7 @@ namespace TexturePackTool.Model
         /// <summary>
         /// The unique name of this frame.
         /// </summary>
+        [JsonProperty("name")]
         public string Name
         {
             get
@@ -35,7 +38,32 @@ namespace TexturePackTool.Model
         /// The path of the frame, which should be at the topmost parent of all
         /// sprites included in any sprite sheet in the project.
         /// </summary>
+        [JsonProperty("path")]
         public string RelativePath { get; private set; }
+
+        /// <summary>
+        /// The x-position of the texture when placed in the sprite sheet.
+        /// </summary>
+        [JsonProperty("x")]
+        public int packedX { get; set; }
+
+        /// <summary>
+        /// The y-position of the texture when placed in the sprite sheet.
+        /// </summary>
+        [JsonProperty("y")]
+        public int packedY { get; set; }
+
+        /// <summary>
+        /// The width of the texture loaded from the path.
+        /// </summary>
+        [JsonProperty("w")]
+        public int packedWidth { get; set; }
+
+        /// <summary>
+        /// The height of the texture loaded from the path.
+        /// </summary>
+        [JsonProperty("h")]
+        public int packedHeight { get; set; }
         #endregion
 
         #region Events
@@ -66,10 +94,58 @@ namespace TexturePackTool.Model
         {
             Name = uniqueName;
             RelativePath = string.Empty;
+            packedX = 0;
+            packedY = 0;
+            packedWidth = 0;
+            packedHeight = 0;
+        }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
+        [JsonConstructor]
+        public Frame(string Name, string RelativePath, int x, int y, int w, int h)
+        {
+            this.Name = Name;
+            this.RelativePath = RelativePath;
+            packedX = x;
+            packedY = y;
+            packedWidth = w;
+            packedHeight = h;
         }
         #endregion
 
         #region Methods
+        /// <summary>
+        /// Attempts to fetch the image associated with the frame, returning null on failure or
+        /// exceptions. Updates dimensions on success.
+        /// </summary>
+        /// <param name="rootPath">
+        /// The absolute path of the saved project file, which the relative path is appended to.
+        /// </param>
+        /// <returns>
+        /// A <see cref="BitmapImage"/> containing the loaded texture, or null on failure.
+        /// </returns>
+        public BitmapImage LoadImage(string rootPath)
+        {
+            try
+            {
+                string path = GetAbsolutePath(RelativePath, rootPath);
+                if (File.Exists(path))
+                {
+                    var image = new BitmapImage(new Uri($"file://{path}"));
+                    packedWidth = image.PixelWidth;
+                    packedHeight = image.PixelHeight;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+
+            return null;
+        }
+
         /// <summary>
         /// Sets a relative path from the absolute path based on the root.
         /// </summary>
@@ -98,7 +174,7 @@ namespace TexturePackTool.Model
         /// <returns>
         /// The absolute path from the relative path.
         /// </returns>
-        public string GetAbsolutePath(string relativePath, string root)
+        private string GetAbsolutePath(string relativePath, string root)
         {
             if (string.IsNullOrEmpty(RelativePath))
             {

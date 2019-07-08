@@ -1,5 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using Newtonsoft.Json;
+using System;
+using System.Collections.ObjectModel;
 
 namespace TexturePackTool.Model
 {
@@ -10,35 +11,19 @@ namespace TexturePackTool.Model
     {
         #region Members
         /// <summary>
-        /// Backing field for <see cref="Frames"/>.
-        /// </summary>
-        private List<Frame> frames;
-
-        /// <summary>
         /// A list of <see cref="Frame"/>s.
         /// </summary>
-        public List<Frame> Frames
-        {
-            get => new List<Frame>(frames);
-            private set => frames = value;
-        }
+        [JsonProperty("frames")]
+        public ObservableCollection<Frame> Frames { get; private set; }
 
         /// <summary>
         /// The unique name of this sprite sheet.
         /// </summary>
-        public string Name
-        {
-            get;
-            private set;
-        }
+        [JsonProperty("name")]
+        public string Name { get; private set; }
         #endregion
 
         #region Events
-        /// <summary>
-        /// Called when any frames are changed.
-        /// </summary>
-        public event Action<List<Frame>> FramesChanged;
-
         /// <summary>
         /// Called when the name changes.
         /// </summary>
@@ -54,8 +39,18 @@ namespace TexturePackTool.Model
         /// </param>
         public SpriteSheet(string uniqueName)
         {
-            Frames = new List<Frame>();
+            Frames = new ObservableCollection<Frame>();
             Name = uniqueName;
+        }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
+        [JsonConstructor]
+        public SpriteSheet(ObservableCollection<Frame> Frames, string Name)
+        {
+            this.Frames = Frames;
+            this.Name = Name;
         }
         #endregion
 
@@ -70,52 +65,6 @@ namespace TexturePackTool.Model
         {
             Name = uniqueName;
             NameUpdated?.Invoke(uniqueName);
-        }
-
-        /// <summary>
-        /// Adds a frame, calling <see cref="FramesChanged"/> afterwards.
-        /// </summary>
-        /// <param name="newFrame">
-        /// The frame to add.
-        /// </param>
-        public void AddFrame(Frame newFrame)
-        {
-            frames.Add(newFrame);
-            FramesChanged?.Invoke(Frames);
-        }
-
-        /// <summary>
-        /// Removes a frame, calling <see cref="FramesChanged"/> afterwards.
-        /// </summary>
-        /// <param name="newFrame">
-        /// The frame to remove.
-        /// </param>
-        public void RemoveFrame(Frame newFrame)
-        {
-            frames.Remove(newFrame);
-            FramesChanged?.Invoke(Frames);
-        }
-
-        /// <summary>
-        /// Overwrites the list of existing frames with a different list, calling
-        /// <see cref="FramesChanged"/> afterwards.
-        /// </summary>
-        /// <param name="frames">
-        /// A list of frames.
-        /// </param>
-        public void SetFrames(List<Frame> frames)
-        {
-            this.frames = frames;
-            FramesChanged?.Invoke(frames);
-        }
-
-        /// <summary>
-        /// Removes all frames.
-        /// </summary>
-        public void ClearFrames()
-        {
-            frames.Clear();
-            FramesChanged?.Invoke(Frames);
         }
         #endregion
     }

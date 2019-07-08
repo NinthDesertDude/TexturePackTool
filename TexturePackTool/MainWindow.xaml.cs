@@ -55,6 +55,12 @@ namespace TexturePackTool
             };
 
             SpritesheetsList.Items.Clear();
+
+            // Load sprite sheets if present.
+            project.SpriteSheets.ForEach(sheet =>
+            {
+                AddSpriteSheetTab(sheet);
+            });
         }
 
         /// <summary>
@@ -89,7 +95,8 @@ namespace TexturePackTool
                 dlg.Title = "Load JSON texture pack file";
                 if (dlg.ShowDialog() == true)
                 {
-                    var loadedProj = TexturePackProject.Load(File.ReadAllText(dlg.SafeFileName));
+                    string test = File.ReadAllText(dlg.FileName);
+                    var loadedProj = TexturePackProject.Load(File.ReadAllText(dlg.FileName));
                     ClearProject(loadedProj);
                     projSaveLoc = dlg.FileName;
                     return true;
@@ -97,6 +104,7 @@ namespace TexturePackTool
             }
             catch
             {
+                MessageBox.Show("The file is corrupt, read-protected or could not be loaded.");
                 return false;
             }
 
@@ -210,24 +218,6 @@ namespace TexturePackTool
             SpritesheetsList.Items.Add(newTab);
         }
 
-        private void AddFiles(SpriteSheet spriteSheet)
-        {
-            OpenFileDialog dlg = new OpenFileDialog();
-            dlg.CheckPathExists = true;
-            dlg.DefaultExt = ".png";
-            dlg.Multiselect = true;
-            if (dlg.ShowDialog() == true)
-            {
-                foreach (string fname in dlg.FileNames)
-                {
-                    string file = System.IO.Path.GetFileNameWithoutExtension(fname);
-                    Model.Frame newFrame = new Model.Frame($"{file}");
-                    newFrame.SetRelativePath(new Uri(fname), new Uri(projSaveLoc));
-                    spriteSheet.AddFrame(newFrame);
-                }
-            }
-        }
-
         /// <summary>
         /// Sets up the content on the given tab, taking both the tab and associated sprite sheet.
         /// </summary>
@@ -241,24 +231,11 @@ namespace TexturePackTool
         {
             SpritesheetControls ctrl = new SpritesheetControls();
             ctrl.SpriteSheetName.Text = newSpriteSheet.Name;
-
-            // Creates an observable intermediate collection of the frames
-            var observeList = new ObservableCollection<Model.Frame>(newSpriteSheet.Frames);
-            ctrl.SpriteSheetFrames.ItemsSource = observeList;
-            observeList.CollectionChanged += (a, args) =>
-            {
-                newSpriteSheet.SetFrames(observeList.ToList());
-            };
-
+            ctrl.SpriteSheetFrames.ItemsSource = newSpriteSheet.Frames;
 
             ctrl.AddFromFileBttn.Click += (a, b) =>
             {
                 AddFiles(newSpriteSheet);
-            };
-
-            newSpriteSheet.FramesChanged += (frames) =>
-            {
-                ctrl.SpriteSheetFrames.ItemsSource = new ObservableCollection<Model.Frame>(frames);
             };
             ctrl.SpriteSheetName.TextChanged += (a, b) =>
             {
@@ -266,6 +243,34 @@ namespace TexturePackTool
             };
 
             newTab.Content = ctrl;
+        }
+
+        /// <summary>
+        /// Opens a dialog for the user to add images as frames.
+        /// </summary>
+        /// <param name="spriteSheet">
+        /// The sprite sheet to add files to if the user successfully adds images.
+        /// </param>
+        private void AddFiles(SpriteSheet spriteSheet)
+        {
+            OpenFileDialog dlg = new OpenFileDialog
+            {
+                CheckPathExists = true,
+                DefaultExt = ".png",
+                Filter = "png files|*.png",
+                Multiselect = true
+            };
+
+            if (dlg.ShowDialog() == true)
+            {
+                foreach (string fname in dlg.FileNames)
+                {
+                    string file = System.IO.Path.GetFileNameWithoutExtension(fname);
+                    Model.Frame newFrame = new Model.Frame($"{file}");
+                    newFrame.SetRelativePath(new Uri(fname), new Uri(projSaveLoc));
+                    spriteSheet.Frames.Add(newFrame);
+                }
+            }
         }
 
         /// <summary>
@@ -296,9 +301,8 @@ namespace TexturePackTool
 
             return null;
         }
-        #endregion
 
-        #region Handlers for menu -> File
+        #region Command handlers
         private void InvokeCommandNew(object sender, ExecutedRoutedEventArgs e)
         {
             var result = MessageBox.Show(
@@ -334,13 +338,12 @@ namespace TexturePackTool
         {
             SaveAsProject(false);
         }
-        #endregion
 
-        #region Handlers for menu -> Edit
-        private void RemoveAcrossSpritesheets_Click(object sender, RoutedEventArgs e)
+        private void InvokeMenuExport(object sender, RoutedEventArgs e)
         {
-
+            // TODO: Handle exporting.
         }
+        #endregion
         #endregion
     }
 }

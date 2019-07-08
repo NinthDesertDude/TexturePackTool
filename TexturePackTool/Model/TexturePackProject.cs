@@ -18,6 +18,7 @@ namespace TexturePackTool.Model
         /// <summary>
         /// A list of <see cref="SpriteSheet"/>s.
         /// </summary>
+        [JsonProperty("sheets")]
         public List<SpriteSheet> SpriteSheets
         {
             get => new List<SpriteSheet>(spriteSheets);
@@ -49,6 +50,15 @@ namespace TexturePackTool.Model
         public TexturePackProject()
         {
             SpriteSheets = new List<SpriteSheet>();
+        }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
+        [JsonConstructor]
+        public TexturePackProject(List<SpriteSheet> spriteSheets)
+        {
+            this.spriteSheets = spriteSheets;
         }
         #endregion
 
