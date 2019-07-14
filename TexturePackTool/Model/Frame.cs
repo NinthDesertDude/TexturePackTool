@@ -3,6 +3,7 @@ using System;
 using System.ComponentModel;
 using System.IO;
 using System.Windows.Media.Imaging;
+using TexturePackTool.TexturePacking;
 
 namespace TexturePackTool.Model
 {
@@ -14,6 +15,9 @@ namespace TexturePackTool.Model
     public class Frame : INotifyPropertyChanged
     {
         #region Members
+        [JsonIgnore]
+        public NodeSite fit;
+
         private string name;
 
         /// <summary>
@@ -45,25 +49,25 @@ namespace TexturePackTool.Model
         /// The x-position of the texture when placed in the sprite sheet.
         /// </summary>
         [JsonProperty("x")]
-        public int packedX { get; set; }
+        public int X { get; set; }
 
         /// <summary>
         /// The y-position of the texture when placed in the sprite sheet.
         /// </summary>
         [JsonProperty("y")]
-        public int packedY { get; set; }
+        public int Y { get; set; }
 
         /// <summary>
         /// The width of the texture loaded from the path.
         /// </summary>
         [JsonProperty("w")]
-        public int packedWidth { get; set; }
+        public int W { get; set; }
 
         /// <summary>
         /// The height of the texture loaded from the path.
         /// </summary>
         [JsonProperty("h")]
-        public int packedHeight { get; set; }
+        public int H { get; set; }
         #endregion
 
         #region Events
@@ -94,10 +98,10 @@ namespace TexturePackTool.Model
         {
             Name = uniqueName;
             RelativePath = string.Empty;
-            packedX = 0;
-            packedY = 0;
-            packedWidth = 0;
-            packedHeight = 0;
+            X = 0;
+            Y = 0;
+            W = 0;
+            H = 0;
         }
 
         /// <summary>
@@ -108,10 +112,10 @@ namespace TexturePackTool.Model
         {
             this.Name = Name;
             this.RelativePath = RelativePath;
-            packedX = x;
-            packedY = y;
-            packedWidth = w;
-            packedHeight = h;
+            X = x;
+            Y = y;
+            W = w;
+            H = h;
         }
         #endregion
 
@@ -134,8 +138,8 @@ namespace TexturePackTool.Model
                 if (File.Exists(path))
                 {
                     var image = new BitmapImage(new Uri($"file://{path}"));
-                    packedWidth = image.PixelWidth;
-                    packedHeight = image.PixelHeight;
+                    W = image.PixelWidth;
+                    H = image.PixelHeight;
                 }
             }
             catch
