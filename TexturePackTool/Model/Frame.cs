@@ -16,7 +16,7 @@ namespace TexturePackTool.Model
     {
         #region Members
         [JsonIgnore]
-        public NodeSite fit;
+        public Node fit;
 
         private string name;
 

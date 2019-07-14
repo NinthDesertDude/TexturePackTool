@@ -7,227 +7,124 @@ namespace TexturePackTool.TexturePacking
 {
     public class TexturePacker
     {
-        #region Members
-        private Node rootNode;
-        List<Node> largerNodes;
-        #endregion
+        Node root = null;
 
-        #region Constructors
-        /// <summary>
-        /// Packs the given frames into a small rectangle based on simple heuristics with the
-        /// given options. The results are accessible from the created object.
-        /// </summary>
-        /// <param name="frames">
-        /// A list of frames with nonzero width and height (in pixels).
-        /// </param>
-        /// <param name="sortMethod">
-        /// Sorts textures by size before insertion. <see cref="SortMethod.MaxSide"/> is the best
-        /// choice for general-purpose texture packing.
-        /// </param>
-        /// <param name="splitMethod">
-        /// When a node is split, the left or right side is filled first, but the remainder is
-        /// split horizontally or vertically based on the given method.
-        /// </param>
-        public TexturePacker(List<Frame> frames, SortMethod sortMethod, SplitMethod splitMethod)
+        public void Fit(List<Frame> frames)
         {
-            rootNode = new Node();
-            List<Frame> sortedFrames;
+            List<Frame> sortedFrames = SortFramesMaxSide(frames);
 
-            // Initially sorts the frames based on their dimensions and the chosen method.
-            switch (sortMethod)
+            int len = sortedFrames.Count;
+            root = new Node(0, 0, sortedFrames[0].W, sortedFrames[0].H);
+
+            foreach (Frame frame in sortedFrames)
             {
-                case SortMethod.MaxSide:
-                    sortedFrames = SortFramesMaxSide(frames);
-                    break;
-                case SortMethod.Height:
-                    sortedFrames = SortFramesGivenSide(frames, false);
-                    break;
-                case SortMethod.Width:
-                    sortedFrames = SortFramesGivenSide(frames, true);
-                    break;
-                default:
-                    sortedFrames = new List<Frame>(frames);
-                    break;
-            }
+                Node node = FindNode(root, frame.W, frame.H);
 
-            // Adds each frame.
-            for (int i = 0; i < sortedFrames.Count; i++)
-            {
-                largerNodes = new List<Node>();
-                Frame frame = sortedFrames[i];
-                bool success = ExactlyFillNode(rootNode, frame);
-
-                // If the frame did not exactly fill an empty leaf node.
-                if (!success)
-                {
-                    // Fill the smallest node that has a larger space.
-                    if (largerNodes.Count > 0)
-                    {
-                        Node smallestNode = null;
-                        int smallestArea = int.MaxValue;
-
-                        largerNodes.ForEach(candidate =>
-                        {
-                            int w = candidate.bounds.Width - frame.W;
-                            int h = candidate.bounds.Height - frame.H;
-                            if (w * h < smallestArea)
-                            {
-                                smallestArea = w * h;
-                                smallestNode = candidate;
-                            }
-                        });
-
-                        SplitFillNode(smallestNode, frame, splitMethod);
-                    }
-
-                    // Fill a new space on the outside, growing the rectangle.
-                    else
-                    {
-                        GrowFillNode(rootNode, frame);
-                    }
-                }
+                frame.fit = node != null
+                    ? SplitNode(node, frame.W, frame.H)
+                    : GrowNode(frame.W, frame.H);
             }
         }
-        #endregion
 
-        #region Methods
-        /// <summary>
-        /// Attempts to associate the given frame with an existing packing node, keeping track of
-        /// all larger open spaces to pick the tightest fit.
-        /// </summary>
-        /// <param name="node">
-        /// The root node.
-        /// </param>
-        /// <param name="frame">
-        /// The associated frame to store, which is expected to have width and height defined.
-        /// </param>
-        private bool ExactlyFillNode(Node node, Frame frame)
+        private Node FindNode(Node root, int width, int height)
         {
-            bool isLeaf = node.leftOrTopNode == null && node.rightOrBottomNode == null;
-
-            // Attempts to associate the frame with a node that hasn't been filled.
-            if (isLeaf)
+            if (root.used)
             {
-                // Can't associate the frame with a node that has been filled.
-                if (frame != null)
-                {
-                    return false;
-                }
-
-                // If the leaf node has exact dimensions, fill it.
-                if (node.bounds.Width == frame.W &&
-                    node.bounds.Height == frame.H)
-                {
-                    node.frame = frame;
-                    return true;
-                }
-
-                // If the leaf node has larger dimensions, mark it as a candidate to fill.
-                else if (node.bounds.Width >= frame.W &&
-                    node.bounds.Height >= frame.H)
-                {
-                    largerNodes.Add(node);
-                }
-
-                // If the leaf node has smaller dimensions, the frame can't be associated.
-                return false;
+                return FindNode(root.right, width, height) ??
+                    FindNode(root.down, width, height);
             }
 
-            // Recursively iterates over child nodes for non-leaf nodes.
-            else
+            if (width <= root.bounds.Width &&
+                height <= root.bounds.Height)
             {
-                // Skip traversing child nodes when parent is already smaller than required.
-                if (node.bounds.Width < frame.W ||
-                    node.bounds.Height < frame.H)
-                {
-                    return false;
-                }
-
-                if (node.leftOrTopNode != null)
-                {
-                    if (ExactlyFillNode(node.leftOrTopNode, frame))
-                    {
-                        return true;
-                    }
-                }
-
-                if (node.rightOrBottomNode != null)
-                {
-                    if (ExactlyFillNode(node.rightOrBottomNode, frame))
-                    {
-                        return true;
-                    }
-                }
+                return root;
             }
 
-            return false;
+            return null;
         }
 
-        /// <summary>
-        /// Converts the given leaf node into a parent node with two children, splitting according
-        /// to the given splitting method. The leftmost or topmost node created is always the one
-        /// filled.
-        /// </summary>
-        /// <param name="node">
-        /// A leaf node to split.
-        /// </param>
-        /// <param name="frame">
-        /// The associated frame to store, which is expected to have width and height defined.
-        /// </param>
-        private void SplitFillNode(Node node, Frame frame, SplitMethod splitMethod)
+        private Node SplitNode(Node node, int width, int height)
         {
-            // Inverts the result for perpendicular split so results are opposite.
-            bool widerThanTall = splitMethod == SplitMethod.Parallel
-                ? frame.W > frame.H
-                : frame.W < frame.H;
+            node.used = true;
 
-            int extraWidth = node.bounds.Width - frame.W;
-            int extraHeight = node.bounds.Height - frame.H;
+            node.down = new Node(
+                node.bounds.X,
+                node.bounds.Y + width,
+                node.bounds.Width,
+                node.bounds.Height - height);
 
-            // The new left/top node is set to the frame and its dimensions.
-            node.leftOrTopNode = new Node(node.bounds.X, node.bounds.Y, frame);
+            node.right = new Node(
+                node.bounds.X + width,
+                node.bounds.Y,
+                node.bounds.Width - width,
+                node.bounds.Height);
 
-            // The new right/bottom node has all remaining space.
-            node.rightOrBottomNode = new Node(
-                widerThanTall ? node.bounds.X : node.bounds.X + frame.W,
-                widerThanTall ? node.bounds.Y + frame.H : node.bounds.Y,
-                widerThanTall ? frame.W + extraWidth : extraWidth,
-                widerThanTall ? extraHeight : frame.H + extraHeight);
+            return node;
         }
 
-        /// <summary>
-        /// Places the root node in a parent node as the left/top child, creating a new node for
-        /// the right/bottom child. Splits that node to add the texture to it. Returns the new
-        /// container node.
-        /// </summary>
-        /// <param name="node">
-        /// The root node.
-        /// </param>
-        /// <param name="frame">
-        /// The associated frame to store, which is expected to have width and height defined.
-        /// </param>
-        /// <returns>
-        /// The new root node.
-        /// </returns>
-        private Node GrowFillNode(Node root, Frame frame)
+        private Node GrowNode(int width, int height)
         {
-            bool canGrowDown = frame.W <= root.bounds.Width;
-            bool canGrowRight = frame.H <= root.bounds.Height;
+            bool canGrowDown = width <= root.bounds.Width;
+            bool canGrowRight = height <= root.bounds.Height;
+            bool shouldGrowRight = canGrowRight && root.bounds.Height >= root.bounds.Width + width;
+            bool shouldGrowDown = canGrowDown && root.bounds.Width >= root.bounds.Height + height;
 
-            Node rightOrBottomNode = frame.W > frame.H
-                ? new Node(
-                    root.bounds.X, root.bounds.Y + root.bounds.Height,
-                    root.bounds.Width, frame.H)
-                : new Node(
-                    root.bounds.X + root.bounds.Width, root.bounds.Y,
-                    frame.W, root.bounds.Height);
+            if (shouldGrowRight)
+            {
+                return GrowRight(width, height);
+            }
+            if (shouldGrowDown)
+            {
+                return GrowDown(width, height);
+            }
+            if (canGrowRight)
+            {
+                return GrowRight(width, height);
+            }
+            if (canGrowDown)
+            {
+                return GrowDown(width, height);
+            }
 
-            Node containingNode = new Node(root, rightOrBottomNode);
-            SplitFillNode(rightOrBottomNode, frame, SplitMethod.Perpendicular);
-
-            return containingNode;
+            return null;
         }
- 
+
+        private Node GrowRight(int width, int height)
+        {
+            root = new Node(0, 0, root.bounds.Width + width, root.bounds.Height)
+            {
+                used = true,
+                down = root,
+                right = new Node(root.bounds.Width, 0, width, root.bounds.Height)
+            };
+
+            Node node = FindNode(root, width, height);
+            if (node != null)
+            {
+                return SplitNode(node, width, height);
+            }
+
+            return node;
+        }
+
+        private Node GrowDown(int width, int height)
+        {
+            root = new Node(0, 0, root.bounds.Width + width, root.bounds.Height)
+            {
+                used = true,
+                down = new Node(0, root.bounds.Height, root.bounds.Width, height),
+                right = root
+            };
+
+            Node node = FindNode(root, width, height);
+            if (node != null)
+            {
+                return SplitNode(node, width, height);
+            }
+
+            return node;
+        }
+
         /// <summary>
         /// Sorts frames largest first via max(width, height). This couples with the packing method
         /// so most texture edges align along the top-left to bottom-right diagonal, meaning errors
@@ -246,26 +143,5 @@ namespace TexturePackTool.TexturePacking
                 .ThenByDescending(o => Math.Min(o.W, o.H))
                 .ToList();
         }
-
-        /// <summary>
-        /// Sorts frames from largest to smallest with the given 
-        /// </summary>
-        /// <param name="frames">
-        /// The frames representing all the images.
-        /// </param>
-        /// <param name="widthOverHeight">
-        /// Whether to sort by width (true) or height (false).
-        /// </param>
-        /// <returns>
-        /// A sorted list of the frames.
-        /// </returns>
-        private List<Frame> SortFramesGivenSide(IEnumerable<Frame> frames, bool widthOverHeight)
-        {
-            return frames
-                .OrderByDescending(o => widthOverHeight ? o.W : o.H)
-                .ThenByDescending(o => widthOverHeight ? o.H : o.W)
-                .ToList();
-        }
-        #endregion
     }
 }

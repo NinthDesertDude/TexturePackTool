@@ -1,26 +1,15 @@
-﻿using TexturePackTool.Model;
-
-namespace TexturePackTool.TexturePacking
+﻿namespace TexturePackTool.TexturePacking
 {
     /// <summary>
     /// Represents a rectangular area that may be subdivided into smaller areas, which
-    /// may be occupied (when the <see cref="frame"/> is set). This is used in an algorithm that
+    /// may be occupied (when the <see cref="used"/> is set). This is used in an algorithm that
     /// packs as many rectangles as possible.
     /// </summary>
     public class Node
     {
         #region Members
-        /// <summary>
-        /// If this isn't a leaf node, it has a left/top node (depending on whether it's split
-        /// horizontally or vertically) and a right/bottom node for the space within it.
-        /// </summary>
-        public Node leftOrTopNode;
-
-        /// <summary>
-        /// If this isn't a leaf node, it has a left/top node (depending on whether it's split
-        /// horizontally or vertically) and a right/bottom node for the space within it.
-        /// </summary>
-        public Node rightOrBottomNode;
+        public Node down;
+        public Node right;
 
         /// <summary>
         /// The dimensions of this node, which only matter if it's a leaf node.
@@ -28,9 +17,9 @@ namespace TexturePackTool.TexturePacking
         public NodeBounds bounds;
 
         /// <summary>
-        /// The associated frame occupying this node, if given. Only leaf nodes can be occupied.
+        /// Whether this node has been associated to a frame or not.
         /// </summary>
-        public Frame frame = null;
+        public bool used;
         #endregion
 
         #region Constructors
@@ -39,27 +28,27 @@ namespace TexturePackTool.TexturePacking
         /// </summary>
         public Node()
         {
-            leftOrTopNode = null;
-            rightOrBottomNode = null;
-            frame = null;
+            down = null;
+            right = null;
+            used = false;
             bounds = new NodeBounds(0, 0, 1, 1);
         }
 
         /// <summary>
         /// Creates a node with child nodes.
         /// </summary>
-        /// <param name="leftOrTop">
+        /// <param name="down">
         /// The node representing the area to the left or top of the separation in the node.
         /// </param>
-        /// <param name="rightOrBottom">
+        /// <param name="right">
         /// The node representing the area to the right or bottom of the separation in the node.
         /// </param>
-        public Node(Node leftOrTop, Node rightOrBottom)
+        public Node(Node down, Node right)
         {
-            leftOrTopNode = leftOrTop;
-            rightOrBottomNode = rightOrBottom;
+            this.down = down;
+            this.right = right;
             bounds = new NodeBounds();
-            frame = null;
+            used = false;
         }
 
         /// <summary>
@@ -79,30 +68,10 @@ namespace TexturePackTool.TexturePacking
         /// </param>
         public Node(int x, int y, int width, int height)
         {
-            leftOrTopNode = null;
-            rightOrBottomNode = null;
+            down = null;
+            right = null;
             bounds = new NodeBounds(x, y, width, height);
-            frame = null;
-        }
-
-        /// <summary>
-        /// Creates a leaf node with the <see cref="Frame"/>'s dimensions.
-        /// </summary>
-        /// <param name="x">
-        /// The leftmost edge of the rectangle the node occupies.
-        /// </param>
-        /// <param name="y">
-        /// The topmost edge of the rectangle the node occupies.
-        /// </param>
-        /// <param name="frame">
-        /// The frame whose width and height is used for this node.
-        /// </param>
-        public Node(int x, int y, Frame frame)
-        {
-            leftOrTopNode = null;
-            rightOrBottomNode = null;
-            bounds = new NodeBounds(x, y, frame.W, frame.H);
-            this.frame = frame;
+            used = false;
         }
         #endregion
     }
