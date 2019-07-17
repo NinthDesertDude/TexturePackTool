@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System;
 using System.Collections.ObjectModel;
+using System.IO;
 
 namespace TexturePackTool.Model
 {
@@ -10,6 +11,13 @@ namespace TexturePackTool.Model
     public class SpriteSheet
     {
         #region Members
+        /// <summary>
+        /// The relative path to save this file under, which will have .png appended if not
+        /// specified.
+        /// </summary>
+        [JsonProperty("export-url")]
+        public string ExportUrl { get; set; }
+
         /// <summary>
         /// A list of <see cref="Frame"/>s.
         /// </summary>
@@ -41,16 +49,18 @@ namespace TexturePackTool.Model
         {
             Frames = new ObservableCollection<Frame>();
             Name = uniqueName;
+            ExportUrl = uniqueName.Replace(' ', '-').ToLower();
         }
 
         /// <summary>
         /// Copy constructor.
         /// </summary>
         [JsonConstructor]
-        public SpriteSheet(ObservableCollection<Frame> Frames, string Name)
+        public SpriteSheet(string exportUrl, ObservableCollection<Frame> frames, string name)
         {
-            this.Frames = Frames;
-            this.Name = Name;
+            ExportUrl = exportUrl;
+            Frames = frames;
+            Name = name;
         }
         #endregion
 
@@ -65,6 +75,22 @@ namespace TexturePackTool.Model
         {
             Name = uniqueName;
             NameUpdated?.Invoke(uniqueName);
+        }
+
+        /// <summary>
+        /// Returns the absolute path from the relative path based on the root.
+        /// </summary>
+        /// <param name="root">
+        /// The save location of the file containing this project, or where it will be located.
+        /// </param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
+        /// <returns>
+        /// The absolute path from the relative path.
+        /// </returns>
+        public string GetAbsolutePath(string root)
+        {
+            return Path.Combine(Path.GetDirectoryName(root), ExportUrl);
         }
         #endregion
     }

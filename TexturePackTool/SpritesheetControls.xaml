@@ -10,30 +10,49 @@
             <RowDefinition Height="auto"/>
             <RowDefinition/>
         </Grid.RowDefinitions>
-        <StackPanel Grid.Row="0" Orientation="Horizontal">
-            <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Margin="4">Included files (frames)</TextBlock>
-            <Button
-            x:Name="AddFromFileBttn"
-            Margin="4"
-            Padding="4"
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Auto"
+            VerticalScrollBarVisibility="Hidden"
         >
-                Add from files
-            </Button>
-            <TextBlock
-            FontWeight="SemiBold"
-            Margin="62 4 4 4"
-            VerticalAlignment="Center"
-        >
-            Sprite sheet name:
-            </TextBlock>
-            <TextBox
-            x:Name="SpriteSheetName"
-            Margin="4"
-            MaxWidth="200"
-            MinWidth="100"
-            VerticalContentAlignment="Center"
-        />
-        </StackPanel>
+            <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Margin="4">Included files (frames)</TextBlock>
+                <Button
+                x:Name="AddFromFileBttn"
+                Margin="4"
+                Padding="4"
+            >
+                    Add from files
+                </Button>
+                <TextBlock
+                    FontWeight="SemiBold"
+                    Margin="16 4 4 4"
+                    VerticalAlignment="Center"
+                >
+                Sheet name:
+                </TextBlock>
+                <TextBox
+                    x:Name="SpriteSheetName"
+                    Margin="4"
+                    MaxWidth="200"
+                    MinWidth="100"
+                    VerticalContentAlignment="Center"
+                />
+                <TextBlock
+                    FontWeight="SemiBold"
+                    Margin="16 4 4 4"
+                    VerticalAlignment="Center"
+                >
+                Path name:
+                </TextBlock>
+                <TextBox
+                    x:Name="SpriteSheetPath"
+                    Margin="4"
+                    MaxWidth="200"
+                    MinWidth="100"
+                    VerticalContentAlignment="Center"
+                />
+            </StackPanel>
+        </ScrollViewer>
         <DataGrid Grid.Row="1" x:Name="SpriteSheetFrames" AutoGenerateColumns="False">
             <DataGrid.Columns>
                 <DataGridTextColumn

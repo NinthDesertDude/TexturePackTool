@@ -8,13 +8,22 @@
     public class Node
     {
         #region Members
-        public Node down;
-        public Node right;
-
         /// <summary>
         /// The dimensions of this node, which only matter if it's a leaf node.
         /// </summary>
         public NodeBounds bounds;
+
+        /// <summary>
+        /// A child node within this one, which is vertically-oriented. The distinction is
+        /// important to growth and splitting of nodes.
+        /// </summary>
+        public Node down;
+
+        /// <summary>
+        /// A child node within this one, which is horizontally-oriented. The distinction is
+        /// important to growth and splitting of nodes.
+        /// </summary>
+        public Node right;
 
         /// <summary>
         /// Whether this node has been associated to a frame or not.
@@ -28,10 +37,10 @@
         /// </summary>
         public Node()
         {
+            bounds = new NodeBounds(0, 0, 0, 0);
             down = null;
             right = null;
             used = false;
-            bounds = new NodeBounds(0, 0, 1, 1);
         }
 
         /// <summary>
@@ -45,9 +54,9 @@
         /// </param>
         public Node(Node down, Node right)
         {
+            bounds = new NodeBounds();
             this.down = down;
             this.right = right;
-            bounds = new NodeBounds();
             used = false;
         }
 
@@ -68,10 +77,24 @@
         /// </param>
         public Node(int x, int y, int width, int height)
         {
+            bounds = new NodeBounds(x, y, width, height);
             down = null;
             right = null;
-            bounds = new NodeBounds(x, y, width, height);
             used = false;
+        }
+
+        /// <summary>
+        /// Copy constructor.
+        /// </summary>
+        /// <param name="other">
+        /// The node whose values should be copied.
+        /// </param>
+        public Node(Node other)
+        {
+            bounds = other.bounds;
+            down = other.down;
+            right = other.right;
+            used = other.used;
         }
         #endregion
     }

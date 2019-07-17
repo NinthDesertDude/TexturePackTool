@@ -15,9 +15,6 @@ namespace TexturePackTool.Model
     public class Frame : INotifyPropertyChanged
     {
         #region Members
-        [JsonIgnore]
-        public Node fit;
-
         private string name;
 
         /// <summary>
@@ -134,7 +131,7 @@ namespace TexturePackTool.Model
         {
             try
             {
-                string path = GetAbsolutePath(RelativePath, rootPath);
+                string path = GetAbsolutePath(rootPath);
                 if (File.Exists(path))
                 {
                     var image = new BitmapImage(new Uri($"file://{path}"));
@@ -169,23 +166,17 @@ namespace TexturePackTool.Model
         /// <summary>
         /// Returns the absolute path from the relative path based on the root.
         /// </summary>
-        /// <param name="relativePath">
-        /// The path indicated.
-        /// </param>
         /// <param name="root">
         /// The save location of the file containing this project, or where it will be located.
         /// </param>
+        /// <exception cref="ArgumentException" />
+        /// <exception cref="ArgumentNullException" />
         /// <returns>
         /// The absolute path from the relative path.
         /// </returns>
-        private string GetAbsolutePath(string relativePath, string root)
+        public string GetAbsolutePath(string root)
         {
-            if (string.IsNullOrEmpty(RelativePath))
-            {
-                return string.Empty;
-            }
-
-            return Path.Combine(root, relativePath);
+            return Path.Combine(Path.GetDirectoryName(root), RelativePath);
         }
         #endregion
     }
