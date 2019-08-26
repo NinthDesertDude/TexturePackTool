@@ -606,6 +606,9 @@ namespace TexturePackTool
             {
                 DrawSpriteSheet(sheet);
             }
+
+            // Saves exported image dimensions.
+            SaveProject();
         }
         #endregion
         #endregion

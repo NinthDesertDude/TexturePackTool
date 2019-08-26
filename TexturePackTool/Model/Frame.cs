@@ -158,7 +158,7 @@ namespace TexturePackTool.Model
         /// </param>
         public void SetRelativePath(Uri absPath, Uri root)
         {
-            RelativePath = root.MakeRelativeUri(absPath).ToString();
+            RelativePath = Uri.UnescapeDataString(root.MakeRelativeUri(absPath).ToString());
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs("RelativePath"));
             RelativePathChanged?.Invoke();
         }
