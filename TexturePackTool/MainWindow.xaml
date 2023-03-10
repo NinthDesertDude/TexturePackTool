@@ -35,9 +35,12 @@
         >
             <MenuItem Header="New" Command="New" InputGestureText="Ctrl+N"/>
             <MenuItem Header="Open" Command="Open" InputGestureText="Ctrl+O"/>
-            <MenuItem Header="Save" Command="Save" InputGestureText="Ctrl+S"/>
-            <MenuItem Header="Save As" Command="SaveAs"/>
-            <MenuItem Header="Export" Click="InvokeMenuExport"/>
+            <MenuItem x:Name="SaveButton" Header="Save" Command="Save" InputGestureText="Ctrl+S" IsEnabled="False"/>
+            <MenuItem x:Name="SaveAsButton" Header="Save As" Command="SaveAs" InputGestureText="Ctrl+Shift+S"/>
+            <MenuItem x:Name="ExportButton" Header="Export">
+                <MenuItem Header="Export for half-pixel offset" Click="InvokeMenuExport"/>
+                <MenuItem Header="Export for no offset" Click="InvokeMenuExportNoOffset"/>
+            </MenuItem>
         </Menu>
         <TabControl
             x:Name="SpritesheetsList"

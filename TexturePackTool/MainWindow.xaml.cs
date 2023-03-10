@@ -106,7 +106,7 @@ namespace TexturePackTool
         private void StartNewProject()
         {
             // Prompts for save file and takes no action on cancel or error.
-            if (SaveAsProject(true))
+            if (SaveAsProject())
             {
                 ClearProject(null);
 
@@ -166,7 +166,7 @@ namespace TexturePackTool
         {
             if (projectSaveUrl == string.Empty || !File.Exists(projectSaveUrl))
             {
-                return SaveAsProject(false);
+                return SaveAsProject();
             }
 
             try
@@ -199,7 +199,7 @@ namespace TexturePackTool
         /// <returns>
         /// True if the project was saved, otherwise false.
         /// </returns>
-        private bool SaveAsProject(bool locatePathOnly)
+        private bool SaveAsProject()
         {
             SaveFileDialog dlg = new SaveFileDialog();
             dlg.Title = "Save new project";
@@ -251,6 +251,9 @@ namespace TexturePackTool
             {
                 Title = Title.Substring(0, Title.Length - 1);
             }
+
+            this.SaveButton.IsEnabled = isUnsaved;
+            if (!this.SaveAsButton.IsEnabled) { this.SaveAsButton.IsEnabled = true; }
         }
 
         /// <summary>
@@ -453,7 +456,7 @@ namespace TexturePackTool
         /// <summary>
         /// Draws all sprite sheets.
         /// </summary>
-        private void DrawSpriteSheet(SpriteSheet spriteSheet)
+        private void DrawSpriteSheet(SpriteSheet spriteSheet, bool addOnePixelBorder)
         {
             // Updates texture locations in the sprite sheet.
             try
@@ -471,7 +474,7 @@ namespace TexturePackTool
                 return;
             }
 
-            TexturePacker texPacker = new TexturePacker();
+            TexturePacker texPacker = new TexturePacker(addOnePixelBorder);
 
             try
             {
@@ -488,50 +491,62 @@ namespace TexturePackTool
                 return;
             }
 
-            // Loads each image and draws it into the sprite sheet.
-            using (Bitmap texSheet = new Bitmap(texPacker.Root.bounds.Width, texPacker.Root.bounds.Height))
-            {
-                try
-                {
-                    using (var canvas = Graphics.FromImage(texSheet))
-                    {
-                        canvas.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                        canvas.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+            int offset = addOnePixelBorder ? 1 : 0;
 
-                        foreach (var frame in spriteSheet.Frames)
+            if (texPacker.Root != null)
+            {
+                // Loads each image and draws it into the sprite sheet.
+                using (Bitmap texSheet = new Bitmap(texPacker.Root.bounds.Width + offset, texPacker.Root.bounds.Height + offset))
+                {
+                    try
+                    {
+                        using (var canvas = Graphics.FromImage(texSheet))
                         {
-                            using (var bitmap = Bitmap.FromFile(frame.GetAbsolutePath(projectSaveUrl)))
+                            canvas.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
+                            canvas.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                            canvas.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
+
+                            foreach (var frame in spriteSheet.Frames)
                             {
-                                canvas.DrawImageUnscaled(bitmap, frame.X, frame.Y);
+                                using (var bitmap = Bitmap.FromFile(frame.GetAbsolutePath(projectSaveUrl)))
+                                {
+                                    // Specify width and height explicitly in case of image resolution differences.
+                                    canvas.DrawImage(bitmap,
+                                        frame.X + offset, frame.Y + offset,
+                                        frame.W - offset, frame.H - offset);
+                                }
+
+                                frame.W += offset;
+                                frame.H += offset;
                             }
                         }
                     }
-                }
-                catch
-                {
-                    MessageBox.Show(
-                        $"Drawing the sprite sheet named '{spriteSheet.Name}' failed.",
-                        "Export failed to draw",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    catch
+                    {
+                        MessageBox.Show(
+                            $"Drawing the sprite sheet named '{spriteSheet.Name}' failed.",
+                            "Export failed to draw",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
 
-                    return;
-                }
+                        return;
+                    }
 
-                // Saves the final sprite sheet and updates the image source.
-                try
-                {
-                    string savePath = spriteSheet.GetAbsolutePath(projectSaveUrl);
-                    texSheet.Save($"{savePath}.png", System.Drawing.Imaging.ImageFormat.Png);
-                    SpritesheetImage.Source = new BitmapImage(new Uri(spriteSheet.ExportUrl, UriKind.Relative));
-                }
-                catch
-                {
-                    MessageBox.Show(
-                        $"The sprite sheet named '{spriteSheet.Name}' can't be saved with its current file path: /{spriteSheet.ExportUrl}.png",
-                        "Export failed to save",
-                        MessageBoxButton.OK,
-                        MessageBoxImage.Error);
+                    // Saves the final sprite sheet and updates the image source.
+                    try
+                    {
+                        string savePath = spriteSheet.GetAbsolutePath(projectSaveUrl);
+                        texSheet.Save($"{savePath}.png", System.Drawing.Imaging.ImageFormat.Png);
+                        SpritesheetImage.Source = new BitmapImage(new Uri(spriteSheet.ExportUrl, UriKind.Relative));
+                    }
+                    catch
+                    {
+                        MessageBox.Show(
+                            $"The sprite sheet named '{spriteSheet.Name}' can't be saved with its current file path: /{spriteSheet.ExportUrl}.png",
+                            "Export failed to save",
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                    }
                 }
             }
         }
@@ -594,17 +609,55 @@ namespace TexturePackTool
         /// </summary>
         private void InvokeCommandSaveAs(object sender, ExecutedRoutedEventArgs e)
         {
-            SaveAsProject(false);
+            SaveAsProject();
+        }
+
+        /// <summary>
+        /// Regenerates and saves each spritesheet, using a 1px offset.
+        /// </summary>
+        private void InvokeMenuExport(object sender, RoutedEventArgs e)
+        {
+            Export(true);
         }
 
         /// <summary>
         /// Regenerates and saves each spritesheet.
         /// </summary>
-        private void InvokeMenuExport(object sender, RoutedEventArgs e)
+        private void InvokeMenuExportNoOffset(object sender, RoutedEventArgs e)
         {
+            Export(false);
+        }
+
+        /// <summary>
+        /// Regenerates and saves each spritesheet.
+        /// </summary>
+        private void Export(bool addOnePixelBorder)
+        {
+            if (project.SpriteSheets.Count == 0)
+            {
+                MessageBox.Show(
+                    "You need to create a spritesheet in order to export anything.",
+                    "No spritesheets to export",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                return;
+            }
+
+            if (project.SpriteSheets.All((spritesheet) => spritesheet.Frames.Count == 0))
+            {
+                MessageBox.Show(
+                    "You need to add frames to at least one spritesheet to export anything.",
+                    "No frames to export",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+
+                return;
+            }
+
             foreach (SpriteSheet sheet in project.SpriteSheets)
             {
-                DrawSpriteSheet(sheet);
+                DrawSpriteSheet(sheet, addOnePixelBorder);
             }
 
             // Saves exported image dimensions.
