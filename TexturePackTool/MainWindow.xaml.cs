@@ -38,6 +38,11 @@ namespace TexturePackTool
         /// The absolute save path of the project, set when creating a new project and on load.
         /// </summary>
         private string projectSaveUrl;
+
+        /// <summary>
+        /// Contains the data of the most recently exported image which is displayed to the user, if available.
+        /// </summary>
+        private MemoryStream displayedExportedImage;
         #endregion
 
         #region Constructors
@@ -89,6 +94,7 @@ namespace TexturePackTool
                 RemoveSpriteSheetTab(removedSpriteSheet);
             };
 
+            // Unhooking the event is necessary to avoid an internal WPF error while clearing.
             SpritesheetsList.Items.Clear();
 
             // Load sprite sheets if present.
@@ -96,6 +102,10 @@ namespace TexturePackTool
             {
                 AddSpriteSheetTab(sheet);
             });
+
+            // Clears or fetches to preview the most recent exported version of the spritesheet.
+            if (project.SpriteSheets.Count == 0) { UnloadExportedImage(); }
+            else { LoadExportedImageIfAble(project.SpriteSheets[project.SpriteSheets.Count - 1]); }
 
             SetWorkUnsavedIndicator(false);
         }
@@ -133,10 +143,9 @@ namespace TexturePackTool
 
                 if (dlg.ShowDialog() == true)
                 {
-                    string test = File.ReadAllText(dlg.FileName);
-                    var loadedProj = TexturePackProject.Load(File.ReadAllText(dlg.FileName));
-                    ClearProject(loadedProj);
                     projectSaveUrl = dlg.FileName;
+                    var loadedProj = TexturePackProject.Load(File.ReadAllText(projectSaveUrl));
+                    ClearProject(loadedProj);
 
                     return true;
                 }
@@ -267,6 +276,19 @@ namespace TexturePackTool
             newSpriteTab.Tag = newSpriteSheet;
             SpritesheetsList.Items.Add(newSpriteTab);
 
+            // Displays the most recently-exported image of the spritesheet associated with the tab, if any.
+            newSpriteTab.PreviewMouseLeftButtonDown += (a, b) =>
+            {
+                LoadExportedImageIfAble(newSpriteSheet);
+            };
+            newSpriteTab.KeyDown += (a, b) =>
+            {
+                if (b.Key == Key.Enter)
+                {
+                    LoadExportedImageIfAble(newSpriteSheet);
+                }
+            };
+
             newSpriteSheet.NameUpdated += (string name) =>
             {
                 SetWorkUnsavedIndicator(true);
@@ -316,6 +338,50 @@ namespace TexturePackTool
             };
 
             SpritesheetsList.Items.Add(newTab);
+        }
+
+        /// <summary>
+        /// Displays the most recently-exported image of the given spritesheet for a tab, if any.
+        /// </summary>
+        private void LoadExportedImageIfAble(SpriteSheet spritesheet)
+        {
+            string imgPath = $"{spritesheet.GetAbsolutePath(projectSaveUrl)}.png";
+
+            if (File.Exists(imgPath))
+            {
+                // Loads the bitmap from file
+                Bitmap bmp = new Bitmap(imgPath);
+
+                // Release the last bitmap in our cache, if any
+                displayedExportedImage?.Close();
+                displayedExportedImage = new MemoryStream();
+
+                // Save the newly-loaded bitmap to our cache
+                bmp.Save(displayedExportedImage, System.Drawing.Imaging.ImageFormat.Png);
+                bmp.Dispose();
+
+                displayedExportedImage.Seek(0, SeekOrigin.Begin);
+
+                // Use our cache as the bmp source (advantage is this avoids file locks)
+                BitmapImage bmpSource = new BitmapImage();
+                bmpSource.BeginInit();
+                bmpSource.CacheOption = BitmapCacheOption.OnLoad;
+                bmpSource.StreamSource = displayedExportedImage;
+                bmpSource.EndInit();
+                bmpSource.Freeze();
+                SpritesheetImage.Source = bmpSource;
+                SpritesheetImage.MaxWidth = bmpSource.Width;
+                SpritesheetImage.MaxHeight = bmpSource.Height;
+            }
+        }
+
+        /// <summary>
+        /// Unloads/stops displaying any exported image in memory, as applicable.
+        /// </summary>
+        private void UnloadExportedImage()
+        {
+            displayedExportedImage?.Close();
+            SpritesheetImage.Source = null;
         }
 
         /// <summary>
@@ -535,11 +601,11 @@ namespace TexturePackTool
                     // Saves the final sprite sheet and updates the image source.
                     try
                     {
-                        string savePath = spriteSheet.GetAbsolutePath(projectSaveUrl);
-                        texSheet.Save($"{savePath}.png", System.Drawing.Imaging.ImageFormat.Png);
-                        SpritesheetImage.Source = new BitmapImage(new Uri(spriteSheet.ExportUrl, UriKind.Relative));
+                        string savePath = $"{spriteSheet.GetAbsolutePath(projectSaveUrl)}.png";
+                        texSheet.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
+                        LoadExportedImageIfAble(spriteSheet);
                     }
-                    catch
+                    catch (Exception e)
                     {
                         MessageBox.Show(
                             $"The sprite sheet named '{spriteSheet.Name}' can't be saved with its current file path: /{spriteSheet.ExportUrl}.png",
@@ -664,6 +730,7 @@ namespace TexturePackTool
             SaveProject();
         }
         #endregion
+
         #endregion
     }
 }
