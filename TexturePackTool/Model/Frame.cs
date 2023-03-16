@@ -118,36 +118,6 @@ namespace TexturePackTool.Model
 
         #region Methods
         /// <summary>
-        /// Attempts to fetch the image associated with the frame, returning null on failure or
-        /// exceptions. Updates dimensions on success.
-        /// </summary>
-        /// <param name="rootPath">
-        /// The absolute path of the saved project file, which the relative path is appended to.
-        /// </param>
-        /// <returns>
-        /// A <see cref="BitmapImage"/> containing the loaded texture, or null on failure.
-        /// </returns>
-        public BitmapImage LoadImage(string rootPath)
-        {
-            try
-            {
-                string path = GetAbsolutePath(rootPath);
-                if (File.Exists(path))
-                {
-                    var image = new BitmapImage(new Uri($"file://{path}"));
-                    W = image.PixelWidth;
-                    H = image.PixelHeight;
-                }
-            }
-            catch
-            {
-                return null;
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Sets a relative path from the absolute path based on the root.
         /// </summary>
         /// <param name="absPath">

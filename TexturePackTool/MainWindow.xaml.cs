@@ -120,7 +120,7 @@ namespace TexturePackTool
             {
                 ClearProject(null);
 
-                project.AddSpriteSheet(new SpriteSheet($"Untitled Spritesheet {++guidCounter}"));
+                project.AddSpriteSheet(new SpriteSheet($"Untitled_Spritesheet_{++guidCounter}"));
             }
         }
 
@@ -317,7 +317,7 @@ namespace TexturePackTool
             Action createNewSpriteSheet = new Action(() =>
             {
                 SetWorkUnsavedIndicator(true);
-                SpriteSheet addedSpriteSheet = new SpriteSheet($"Untitled Spritesheet {++guidCounter}");
+                SpriteSheet addedSpriteSheet = new SpriteSheet($"Untitled_Spritesheet_{++guidCounter}");
                 project.AddSpriteSheet(addedSpriteSheet);
                 Dispatcher.BeginInvoke((Action)(() => SpritesheetsList.SelectedIndex = SpritesheetsList.Items.Count - 2));
             });
@@ -602,10 +602,11 @@ namespace TexturePackTool
                     try
                     {
                         string savePath = $"{spriteSheet.GetAbsolutePath(projectSaveUrl)}.png";
+                        Directory.CreateDirectory(Path.GetDirectoryName(savePath));
                         texSheet.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
                         LoadExportedImageIfAble(spriteSheet);
                     }
-                    catch (Exception e)
+                    catch
                     {
                         MessageBox.Show(
                             $"The sprite sheet named '{spriteSheet.Name}' can't be saved with its current file path: /{spriteSheet.ExportUrl}.png",
