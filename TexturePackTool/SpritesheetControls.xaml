@@ -15,12 +15,22 @@
             VerticalScrollBarVisibility="Hidden"
         >
             <StackPanel Grid.Row="0" Orientation="Horizontal">
+                <Button
+                x:Name="RemoveSpritesheetBttn"
+                Margin="4"
+                Padding="4"
+                Background="Transparent"
+                FontWeight="SemiBold"
+                VerticalAlignment="Center"
+                >
+                    X
+                </Button>
                 <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Margin="4">Included files (frames)</TextBlock>
                 <Button
                 x:Name="AddFromFileBttn"
                 Margin="4"
                 Padding="4"
-            >
+                >
                     Add from files
                 </Button>
                 <TextBlock

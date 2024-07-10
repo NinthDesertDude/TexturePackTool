@@ -18,10 +18,8 @@ namespace TexturePackTool
     public partial class MainWindow : Window
     {
         #region Members
-        /// <summary>
-        /// A numeric counter to help make generated names unique.
-        /// </summary>
-        private static int guidCounter;
+        private static readonly string applicationName = "Texture Pack Tool";
+        private static readonly string newSpritesheetPrefix = "Untitled_Spritesheet_";
 
         /// <summary>
         /// Whether the user has unsaved changes or not. Only modify this using
@@ -42,18 +40,10 @@ namespace TexturePackTool
         /// <summary>
         /// Contains the data of the most recently exported image which is displayed to the user, if available.
         /// </summary>
-        private MemoryStream displayedExportedImage;
+        private MemoryStream displayedImage;
         #endregion
 
         #region Constructors
-        /// <summary>
-        /// Static constructor.
-        /// </summary>
-        static MainWindow()
-        {
-            guidCounter = 0;
-        }
-
         /// <summary>
         /// Creates an instance of the main window view.
         /// </summary>
@@ -64,6 +54,7 @@ namespace TexturePackTool
             isUserWorkUnsaved = false;
             project = new TexturePackProject();
             projectSaveUrl = string.Empty;
+            Title = applicationName;
         }
         #endregion
 
@@ -75,7 +66,6 @@ namespace TexturePackTool
         /// </summary>
         private void ClearProject(TexturePackProject proj)
         {
-            guidCounter = 0;
             project = proj ?? new TexturePackProject();
 
             project.SpriteSheetsCleared += () =>
@@ -120,7 +110,7 @@ namespace TexturePackTool
             {
                 ClearProject(null);
 
-                project.AddSpriteSheet(new SpriteSheet($"Untitled_Spritesheet_{++guidCounter}"));
+                project.AddSpriteSheet(new SpriteSheet($"{newSpritesheetPrefix}1"));
             }
         }
 
@@ -144,6 +134,7 @@ namespace TexturePackTool
                 if (dlg.ShowDialog() == true)
                 {
                     projectSaveUrl = dlg.FileName;
+                    Title = $"{applicationName} - {dlg.SafeFileName}";
                     var loadedProj = TexturePackProject.Load(File.ReadAllText(projectSaveUrl));
                     ClearProject(loadedProj);
 
@@ -221,6 +212,7 @@ namespace TexturePackTool
                 if (dlg.ShowDialog() == true)
                 {
                     projectSaveUrl = dlg.FileName;
+                    Title = $"{applicationName} - {dlg.SafeFileName}";
                     File.WriteAllText(projectSaveUrl, project.Save());
                     SetWorkUnsavedIndicator(false);
 
@@ -317,7 +309,11 @@ namespace TexturePackTool
             Action createNewSpriteSheet = new Action(() =>
             {
                 SetWorkUnsavedIndicator(true);
-                SpriteSheet addedSpriteSheet = new SpriteSheet($"Untitled_Spritesheet_{++guidCounter}");
+
+                int counter = 1;
+                while (project.SpriteSheets.Any(o => o.Name == $"{newSpritesheetPrefix}{counter}")) { counter++; }
+
+                SpriteSheet addedSpriteSheet = new SpriteSheet($"{newSpritesheetPrefix}{counter}");
                 project.AddSpriteSheet(addedSpriteSheet);
                 Dispatcher.BeginInvoke((Action)(() => SpritesheetsList.SelectedIndex = SpritesheetsList.Items.Count - 2));
             });
@@ -346,27 +342,43 @@ namespace TexturePackTool
         private void LoadExportedImageIfAble(SpriteSheet spritesheet)
         {
             string imgPath = $"{spritesheet.GetAbsolutePath(projectSaveUrl)}.png";
+            LoadImageIfAble(imgPath);
+        }
 
-            if (File.Exists(imgPath))
+        /// <summary>
+        /// Displays the given frame's associated image if able.
+        /// </summary>
+        private void LoadPreviewImageIfAble(Model.Frame frame)
+        {
+            string imgPath = $"{frame.GetAbsolutePath(projectSaveUrl)}";
+            LoadImageIfAble(imgPath);
+        }
+
+        /// <summary>
+        /// Displays the given image in the image preview if able.
+        /// </summary>
+        private void LoadImageIfAble(string imgPath)
+        {
+            if (imgPath != null && File.Exists(imgPath))
             {
                 // Loads the bitmap from file
                 Bitmap bmp = new Bitmap(imgPath);
 
                 // Release the last bitmap in our cache, if any
-                displayedExportedImage?.Close();
-                displayedExportedImage = new MemoryStream();
+                displayedImage?.Close();
+                displayedImage = new MemoryStream();
 
                 // Save the newly-loaded bitmap to our cache
-                bmp.Save(displayedExportedImage, System.Drawing.Imaging.ImageFormat.Png);
+                bmp.Save(displayedImage, System.Drawing.Imaging.ImageFormat.Png);
                 bmp.Dispose();
 
-                displayedExportedImage.Seek(0, SeekOrigin.Begin);
+                displayedImage.Seek(0, SeekOrigin.Begin);
 
                 // Use our cache as the bmp source (advantage is this avoids file locks)
                 BitmapImage bmpSource = new BitmapImage();
                 bmpSource.BeginInit();
                 bmpSource.CacheOption = BitmapCacheOption.OnLoad;
-                bmpSource.StreamSource = displayedExportedImage;
+                bmpSource.StreamSource = displayedImage;
                 bmpSource.EndInit();
                 bmpSource.Freeze();
                 SpritesheetImage.Source = bmpSource;
@@ -380,7 +392,7 @@ namespace TexturePackTool
         /// </summary>
         private void UnloadExportedImage()
         {
-            displayedExportedImage?.Close();
+            displayedImage?.Close();
             SpritesheetImage.Source = null;
         }
 
@@ -400,9 +412,27 @@ namespace TexturePackTool
             ctrl.SpriteSheetPath.Text = newSpriteSheet.ExportUrl;
             ctrl.SpriteSheetFrames.ItemsSource = newSpriteSheet.Frames;
 
+            ctrl.RemoveSpritesheetBttn.Click += (a, b) =>
+            {
+                var result = MessageBox.Show(
+                "This will delete this spritesheet. Are you sure?",
+                "Confirm delete spritesheet",
+                MessageBoxButton.YesNo);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    RemoveSpriteSheetTab(newSpriteSheet);
+                    project.RemoveSpriteSheet(newSpriteSheet);
+                }
+            };
             ctrl.AddFromFileBttn.Click += (a, b) =>
             {
                 AddFiles(newSpriteSheet);
+            };
+            ctrl.SpriteSheetFrames.SelectionChanged += (a, b) =>
+            {
+                var activeFrame = (Model.Frame)ctrl.SpriteSheetFrames.SelectedItem;
+                LoadPreviewImageIfAble(activeFrame);
             };
             ctrl.SpriteSheetName.TextChanged += (a, b) =>
             {
@@ -604,7 +634,11 @@ namespace TexturePackTool
                         string savePath = $"{spriteSheet.GetAbsolutePath(projectSaveUrl)}.png";
                         Directory.CreateDirectory(Path.GetDirectoryName(savePath));
                         texSheet.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
-                        LoadExportedImageIfAble(spriteSheet);
+
+                        if (GetSpriteSheetTab(spriteSheet)?.IsSelected ?? false)
+                        {
+                            LoadExportedImageIfAble(spriteSheet);
+                        }
                     }
                     catch
                     {
@@ -676,7 +710,18 @@ namespace TexturePackTool
         /// </summary>
         private void InvokeCommandSaveAs(object sender, ExecutedRoutedEventArgs e)
         {
-            SaveAsProject();
+            if (project.SpriteSheets.Count == 0)
+            {
+                MessageBox.Show(
+                    "You need to create a spritesheet in order to save anything.",
+                    "No data to save",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+            else
+            {
+                SaveAsProject();
+            }
         }
 
         /// <summary>
