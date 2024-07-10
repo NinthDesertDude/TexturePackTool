@@ -12,10 +12,9 @@ namespace TexturePackTool.TexturePacking
     public class TexturePacker
     {
         /// <summary>
-        /// If true, adds a 1px transparent border around all images to avoid half-pixel offset visual artifacts in
-        /// engines that use half pixel offset, e.g. MonoGame.
+        /// Provides special instructions to the texture packer, e.g. adding a 1px transparent border while packing.
         /// </summary>
-        public bool AddOnePixelBorder;
+        public ExportOptions Options;
 
         /// <summary>
         /// The top-level node, or null if not set. The bounds of this node should encompass the
@@ -26,10 +25,10 @@ namespace TexturePackTool.TexturePacking
         /// <summary>
         /// Creates a new texture packer.
         /// </summary>
-        public TexturePacker(bool addOnePixelBorder)
+        public TexturePacker(ExportOptions options)
         {
             Root = null;
-            AddOnePixelBorder = addOnePixelBorder;
+            Options = options;
         }
 
         #region Methods
@@ -68,7 +67,7 @@ namespace TexturePackTool.TexturePacking
             }
 
             // Pads each frame by 2 pixels to center the image with a transparent border.
-            if (AddOnePixelBorder)
+            if (Options == ExportOptions.HalfPixelOffset || Options == ExportOptions.BlackBorders)
             {
                 frames.ForEach((frame) => { frame.W += 1; frame.H += 1; });
             }

@@ -69,6 +69,7 @@
       <DependentUpon>SpritesheetControls.xaml</DependentUpon>
     </Compile>
     <Compile Include="Model\TexturePackProject.cs" />
+    <Compile Include="TexturePacking\ExportOptions.cs" />
     <Compile Include="TexturePacking\Node.cs" />
     <Compile Include="TexturePacking\NodeBounds.cs" />
     <Compile Include="TexturePacking\TexturePacker.cs" />

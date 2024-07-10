@@ -111,6 +111,7 @@ namespace TexturePackTool
                 ClearProject(null);
 
                 project.AddSpriteSheet(new SpriteSheet($"{newSpritesheetPrefix}1"));
+                SaveProject();
             }
         }
 
@@ -254,7 +255,8 @@ namespace TexturePackTool
             }
 
             this.SaveButton.IsEnabled = isUnsaved;
-            if (!this.SaveAsButton.IsEnabled) { this.SaveAsButton.IsEnabled = true; }
+            this.SaveAsButton.IsEnabled = true;
+            this.ExportButton.IsEnabled = true;
         }
 
         /// <summary>
@@ -350,7 +352,7 @@ namespace TexturePackTool
         /// </summary>
         private void LoadPreviewImageIfAble(Model.Frame frame)
         {
-            string imgPath = $"{frame.GetAbsolutePath(projectSaveUrl)}";
+            string imgPath = $"{frame?.GetAbsolutePath(projectSaveUrl)}";
             LoadImageIfAble(imgPath);
         }
 
@@ -552,7 +554,7 @@ namespace TexturePackTool
         /// <summary>
         /// Draws all sprite sheets.
         /// </summary>
-        private void DrawSpriteSheet(SpriteSheet spriteSheet, bool addOnePixelBorder)
+        private void DrawSpriteSheet(SpriteSheet spriteSheet, ExportOptions options)
         {
             // Updates texture locations in the sprite sheet.
             try
@@ -570,7 +572,7 @@ namespace TexturePackTool
                 return;
             }
 
-            TexturePacker texPacker = new TexturePacker(addOnePixelBorder);
+            TexturePacker texPacker = new TexturePacker(options);
 
             try
             {
@@ -587,7 +589,8 @@ namespace TexturePackTool
                 return;
             }
 
-            int offset = addOnePixelBorder ? 1 : 0;
+            int offset = (options == ExportOptions.HalfPixelOffset || options == ExportOptions.BlackBorders)
+                ? 1 : 0;
 
             if (texPacker.Root != null)
             {
@@ -610,6 +613,12 @@ namespace TexturePackTool
                                     canvas.DrawImage(bitmap,
                                         frame.X + offset, frame.Y + offset,
                                         frame.W - offset, frame.H - offset);
+                                }
+
+                                // Draws black rectangles in all the shared space.
+                                if (options == ExportOptions.BlackBorders)
+                                {
+                                    canvas.DrawRectangle(Pens.Black, new Rectangle(frame.X, frame.Y, frame.W, frame.H));
                                 }
 
                                 frame.W += offset;
@@ -729,7 +738,7 @@ namespace TexturePackTool
         /// </summary>
         private void InvokeMenuExport(object sender, RoutedEventArgs e)
         {
-            Export(true);
+            Export(ExportOptions.HalfPixelOffset);
         }
 
         /// <summary>
@@ -737,13 +746,21 @@ namespace TexturePackTool
         /// </summary>
         private void InvokeMenuExportNoOffset(object sender, RoutedEventArgs e)
         {
-            Export(false);
+            Export(ExportOptions.NoOffset);
+        }
+
+        /// <summary>
+        /// Regenerates and saves each spritesheet, using a 1px offset filled in black.
+        /// </summary>
+        private void InvokeMenuExportBordered(object sender, RoutedEventArgs e)
+        {
+            Export(ExportOptions.BlackBorders);
         }
 
         /// <summary>
         /// Regenerates and saves each spritesheet.
         /// </summary>
-        private void Export(bool addOnePixelBorder)
+        private void Export(ExportOptions exportOptions)
         {
             if (project.SpriteSheets.Count == 0)
             {
@@ -769,7 +786,7 @@ namespace TexturePackTool
 
             foreach (SpriteSheet sheet in project.SpriteSheets)
             {
-                DrawSpriteSheet(sheet, addOnePixelBorder);
+                DrawSpriteSheet(sheet, exportOptions);
             }
 
             // Saves exported image dimensions.
