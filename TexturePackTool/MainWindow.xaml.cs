@@ -127,11 +127,6 @@ namespace TexturePackTool
         {
             try
             {
-                using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
-                {
-                    System.Windows.Forms.DialogResult result = dialog.ShowDialog();
-                }
-
                 OpenFileDialog dlg = new OpenFileDialog();
                 dlg.CheckFileExists = true;
                 dlg.CheckPathExists = true;
