@@ -43,6 +43,9 @@
                 <MenuItem Header="Export for no offset" Click="InvokeMenuExportNoOffset"/>
                 <MenuItem Header="Export with borders" Click="InvokeMenuExportBordered"/>
             </MenuItem>
+            <MenuItem x:Name="UtilityButton" Header="Utility">
+                <MenuItem Header="Split spritesheet grid(s)" Click="InvokeMenuUtilitySplitGrid"/>
+            </MenuItem>
         </Menu>
         <TabControl
             x:Name="SpritesheetsList"

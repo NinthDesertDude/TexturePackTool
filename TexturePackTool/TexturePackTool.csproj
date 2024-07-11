@@ -45,6 +45,7 @@
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -63,8 +64,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CommandLine\SplitGridCommandJson.cs" />
+    <Compile Include="CommandLine\ExportCommandJson.cs" />
+    <Compile Include="CommandLine\CommandLine.cs" />
     <Compile Include="Model\Frame.cs" />
     <Compile Include="Model\SpriteSheet.cs" />
+    <Compile Include="DialogSplitByGrid.xaml.cs">
+      <DependentUpon>DialogSplitByGrid.xaml</DependentUpon>
+    </Compile>
     <Compile Include="SpritesheetControls.xaml.cs">
       <DependentUpon>SpritesheetControls.xaml</DependentUpon>
     </Compile>
@@ -72,6 +79,7 @@
     <Compile Include="TexturePacking\ExportOptions.cs" />
     <Compile Include="TexturePacking\Node.cs" />
     <Compile Include="TexturePacking\NodeBounds.cs" />
+    <Compile Include="Utilities\DrawingUtils.cs" />
     <Compile Include="TexturePacking\TexturePacker.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -85,6 +93,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="DialogSplitByGrid.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="SpritesheetControls.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -120,5 +132,6 @@
   <ItemGroup>
     <Resource Include="Icon.ico" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

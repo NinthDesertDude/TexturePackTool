@@ -19,19 +19,16 @@
                 x:Name="RemoveSpritesheetBttn"
                 Margin="4"
                 Padding="4"
-                Background="Transparent"
-                FontWeight="SemiBold"
                 VerticalAlignment="Center"
                 >
-                    X
+                    Delete Spritesheet
                 </Button>
-                <TextBlock VerticalAlignment="Center" FontWeight="SemiBold" Margin="4">Included files (frames)</TextBlock>
                 <Button
                 x:Name="AddFromFileBttn"
                 Margin="4"
                 Padding="4"
                 >
-                    Add from files
+                    Add frames
                 </Button>
                 <TextBlock
                     FontWeight="SemiBold"

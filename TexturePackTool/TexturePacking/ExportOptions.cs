@@ -1,9 +1,7 @@
 ﻿namespace TexturePackTool.TexturePacking
 {
     /// <summary>
-    /// Represents a rectangular area that may be subdivided into smaller areas, which
-    /// may be occupied (when the <see cref="used"/> is set). This is used in an algorithm that
-    /// packs as many rectangles as possible.
+    /// These options are passed on to the texture packing algorithm to modify how it behaves.
     /// </summary>
     public enum ExportOptions
     {

@@ -9,6 +9,7 @@ using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using TexturePackTool.Model;
 using TexturePackTool.TexturePacking;
+using TexturePackTool.Utilities;
 
 namespace TexturePackTool
 {
@@ -126,6 +127,11 @@ namespace TexturePackTool
         {
             try
             {
+                using (var dialog = new System.Windows.Forms.FolderBrowserDialog())
+                {
+                    System.Windows.Forms.DialogResult result = dialog.ShowDialog();
+                }
+
                 OpenFileDialog dlg = new OpenFileDialog();
                 dlg.CheckFileExists = true;
                 dlg.CheckPathExists = true;
@@ -521,142 +527,25 @@ namespace TexturePackTool
         }
 
         /// <summary>
-        /// Attempts to read the width and height metadata of all frames in the spritesheet, and
-        /// updates the associated frames' width and height dimensions.
-        /// </summary>
-        /// <exception cref="ArgumentException"/>
-        /// <exception cref="ArgumentNullException"/>
-        /// <exception cref="PathTooLongException"/>
-        /// <exception cref="DirectoryNotFoundException"/>
-        /// <exception cref="UnauthorizedAccessException"/>
-        /// <exception cref="FileNotFoundException"/>
-        /// <exception cref="NotSupportedException"/>
-        /// <exception cref="IOException"/>
-        private void RefreshImageDimensions(SpriteSheet spriteSheet)
-        {
-            for (int i = 0; i < spriteSheet.Frames.Count; i++)
-            {
-                Model.Frame frame = spriteSheet.Frames[i];
-
-                using (FileStream imageStream = File.OpenRead(frame.GetAbsolutePath(projectSaveUrl)))
-                {
-                    BitmapDecoder decoder = BitmapDecoder.Create(
-                        imageStream,
-                        BitmapCreateOptions.IgnoreColorProfile,
-                        BitmapCacheOption.Default);
-
-                    frame.W = decoder.Frames[0].PixelWidth;
-                    frame.H = decoder.Frames[0].PixelHeight;
-                }
-            }
-        }
-
-        /// <summary>
         /// Draws all sprite sheets.
         /// </summary>
         private void DrawSpriteSheet(SpriteSheet spriteSheet, ExportOptions options)
         {
-            // Updates texture locations in the sprite sheet.
-            try
-            {
-                RefreshImageDimensions(spriteSheet);
-            }
-            catch
+            var possibleErrorAndCaption = DrawingUtils.ExportPacked(projectSaveUrl, spriteSheet, options);
+            if (possibleErrorAndCaption != null)
             {
                 MessageBox.Show(
-                    $"Getting image dimensions for all frames failed for the sprite sheet named '{spriteSheet.Name}'.",
-                    "Export failed before draw",
+                    possibleErrorAndCaption.Item1,
+                    possibleErrorAndCaption.Item2,
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-
-                return;
             }
-
-            TexturePacker texPacker = new TexturePacker(options);
-
-            try
+            else
             {
-                texPacker.Pack(spriteSheet.Frames.ToList());
-            }
-            catch (NullReferenceException)
-            {
-                MessageBox.Show(
-                    $"Packing the texture failed for the sprite sheet named '{spriteSheet.Name}'.",
-                    "Export failed before draw",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Error);
-
-                return;
-            }
-
-            int offset = (options == ExportOptions.HalfPixelOffset || options == ExportOptions.BlackBorders)
-                ? 1 : 0;
-
-            if (texPacker.Root != null)
-            {
-                // Loads each image and draws it into the sprite sheet.
-                using (Bitmap texSheet = new Bitmap(texPacker.Root.bounds.Width + offset, texPacker.Root.bounds.Height + offset))
+                // Refresh the preview on success
+                if (GetSpriteSheetTab(spriteSheet)?.IsSelected ?? false)
                 {
-                    try
-                    {
-                        using (var canvas = Graphics.FromImage(texSheet))
-                        {
-                            canvas.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                            canvas.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-                            canvas.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
-
-                            foreach (var frame in spriteSheet.Frames)
-                            {
-                                using (var bitmap = Bitmap.FromFile(frame.GetAbsolutePath(projectSaveUrl)))
-                                {
-                                    // Specify width and height explicitly in case of image resolution differences.
-                                    canvas.DrawImage(bitmap,
-                                        frame.X + offset, frame.Y + offset,
-                                        frame.W - offset, frame.H - offset);
-                                }
-
-                                // Draws black rectangles in all the shared space.
-                                if (options == ExportOptions.BlackBorders)
-                                {
-                                    canvas.DrawRectangle(Pens.Black, new Rectangle(frame.X, frame.Y, frame.W, frame.H));
-                                }
-
-                                frame.W += offset;
-                                frame.H += offset;
-                            }
-                        }
-                    }
-                    catch
-                    {
-                        MessageBox.Show(
-                            $"Drawing the sprite sheet named '{spriteSheet.Name}' failed.",
-                            "Export failed to draw",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-
-                        return;
-                    }
-
-                    // Saves the final sprite sheet and updates the image source.
-                    try
-                    {
-                        string savePath = $"{spriteSheet.GetAbsolutePath(projectSaveUrl)}.png";
-                        Directory.CreateDirectory(Path.GetDirectoryName(savePath));
-                        texSheet.Save(savePath, System.Drawing.Imaging.ImageFormat.Png);
-
-                        if (GetSpriteSheetTab(spriteSheet)?.IsSelected ?? false)
-                        {
-                            LoadExportedImageIfAble(spriteSheet);
-                        }
-                    }
-                    catch
-                    {
-                        MessageBox.Show(
-                            $"The sprite sheet named '{spriteSheet.Name}' can't be saved with its current file path: /{spriteSheet.ExportUrl}.png",
-                            "Export failed to save",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Error);
-                    }
+                    LoadExportedImageIfAble(spriteSheet);
                 }
             }
         }
@@ -791,6 +680,57 @@ namespace TexturePackTool
 
             // Saves exported image dimensions.
             SaveProject();
+        }
+
+        private void InvokeMenuUtilitySplitGrid(object sender, RoutedEventArgs e)
+        {
+            DialogSplitByGrid dlg = new DialogSplitByGrid();
+            dlg.OnClose = () => dlg.Close();
+
+            dlg.OnApply = () =>
+            {
+                try
+                {
+                    Tuple<string, string> possibleErrorMessage = null;
+                    string[] files = dlg.TextureUrlTxtbx.Text.Split(';');
+
+                    foreach (string file in files)
+                    {
+                        possibleErrorMessage = DrawingUtils.SplitTextureByGrid(
+                        file,
+                        Path.Combine(dlg.OutputDirTxtbx.Text, Path.GetFileNameWithoutExtension(file)),
+                        int.Parse(dlg.TileWidthTxtbx.Text),
+                        int.Parse(dlg.TileHeightTxtbx.Text),
+                        new System.Drawing.Point(int.Parse(dlg.OffsetXTxtbx.Text), int.Parse(dlg.OffsetYTxtbx.Text)),
+                        new System.Drawing.Point(int.Parse(dlg.StartOffsetXTxtbx.Text), int.Parse(dlg.StartOffsetYTxtbx.Text)),
+                        dlg.WholeTilesOnlyChkbx.IsChecked ?? false);
+
+                        if (possibleErrorMessage != null)
+                        {
+                            MessageBox.Show(
+                                possibleErrorMessage.Item1,
+                                possibleErrorMessage.Item2,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                        }
+                    }
+
+                    if (possibleErrorMessage == null)
+                    {
+                        dlg.Close();
+                    }
+                }
+                catch
+                {
+                    MessageBox.Show(
+                        "Couldn't split the spritesheets; try checking that all files/folders exist.",
+                        "Failed to split spritesheet(s)",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+            };
+
+            dlg.ShowDialog();
         }
         #endregion
 
