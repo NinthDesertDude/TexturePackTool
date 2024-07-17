@@ -8,15 +8,18 @@ namespace TexturePackTool.CommandLine
     public class SplitGridCommandJson
     {
         /// <summary>
-        /// An absolute URL to an existing texture file that contains all the tiles to be split.
+        /// An absolute URL to an existing texture file that contains all the tiles to be split. Multiple textures can
+        /// be specified, delimited by a semicolon.
         /// </summary>
         [JsonProperty("TextureUrl")]
+        [JsonRequired]
         public string TextureUrl { get; set; }
 
         /// <summary>
         /// An absolute directory path which all resulting tiles will be placed in.
         /// </summary>
         [JsonProperty("OutputDir")]
+        [JsonRequired]
         public string OutputDir { get; set; }
 
         /// <summary>
@@ -60,5 +63,10 @@ namespace TexturePackTool.CommandLine
         /// included or omitted at will.
         /// </summary>
         public bool WholeTilesOnly { get; set; }
+
+        /// <summary>
+        /// If a tile that would be exported is perfectly transparent, it's skipped over if this is true.
+        /// </summary>
+        public bool SkipEmptyTiles { get; set; }
     }
 }

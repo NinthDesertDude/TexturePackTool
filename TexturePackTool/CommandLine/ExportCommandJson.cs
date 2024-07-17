@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using TexturePackTool.TexturePacking;
 
 namespace TexturePackTool.CommandLine
 {
@@ -12,12 +11,14 @@ namespace TexturePackTool.CommandLine
         /// An absolute URL directory path used to resolve relative paths in <see cref="Files"/>.
         /// </summary>
         [JsonProperty("ProjectUrl")]
+        [JsonRequired]
         public string ProjectUrl { get; set; }
 
         /// <summary>
         /// A name with no file extension where the output PNG is (over)written.
         /// </summary>
         [JsonProperty("ExportUrl")]
+        [JsonRequired]
         public string ExportUrl { get; set; }
 
         /// <summary>

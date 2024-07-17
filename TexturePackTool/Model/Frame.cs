@@ -2,8 +2,6 @@
 using System;
 using System.ComponentModel;
 using System.IO;
-using System.Windows.Media.Imaging;
-using TexturePackTool.TexturePacking;
 
 namespace TexturePackTool.Model
 {

@@ -7,8 +7,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
+using TexturePackTool.CommandLine;
 using TexturePackTool.Model;
-using TexturePackTool.TexturePacking;
 using TexturePackTool.Utilities;
 
 namespace TexturePackTool
@@ -42,6 +42,16 @@ namespace TexturePackTool
         /// Contains the data of the most recently exported image which is displayed to the user, if available.
         /// </summary>
         private MemoryStream displayedImage;
+
+        /// <summary>
+        /// User values are stored and prepopulated from their last use.
+        /// </summary>
+        private SplitGridCommandJson rememberSplitGridOptions;
+
+        /// <summary>
+        /// User values are stored and prepopulated from their last use.
+        /// </summary>
+        private SplitRegionCommandJson rememberSplitRegionOptions;
         #endregion
 
         #region Constructors
@@ -677,51 +687,140 @@ namespace TexturePackTool
             SaveProject();
         }
 
+        /// <summary>
+        /// Opens a dialog that lets the user evenly separate the tiles in a tilesheet PNG to their own file.
+        /// </summary>
         private void InvokeMenuUtilitySplitGrid(object sender, RoutedEventArgs e)
         {
-            DialogSplitByGrid dlg = new DialogSplitByGrid();
-            dlg.OnClose = () => dlg.Close();
+            DialogSplitByGrid dlg = (rememberSplitGridOptions == null)
+                ? new DialogSplitByGrid()
+                : new DialogSplitByGrid(rememberSplitGridOptions);
 
+            dlg.OnClose = () => dlg.Close();
             dlg.OnApply = () =>
             {
+                rememberSplitGridOptions = new SplitGridCommandJson()
+                {
+                    TextureUrl = dlg.TextureUrlTxtbx.Text,
+                    OutputDir = dlg.OutputDirTxtbx.Text,
+                    TileWidth = int.Parse(dlg.TileWidthTxtbx.Text),
+                    TileHeight = int.Parse(dlg.TileHeightTxtbx.Text),
+                    OffsetX = int.Parse(dlg.OffsetXTxtbx.Text),
+                    OffsetY = int.Parse(dlg.OffsetYTxtbx.Text),
+                    StartOffsetX = int.Parse(dlg.StartOffsetXTxtbx.Text),
+                    StartOffsetY = int.Parse(dlg.StartOffsetYTxtbx.Text),
+                    WholeTilesOnly = dlg.WholeTilesOnlyChkbx.IsChecked != false,
+                    SkipEmptyTiles = dlg.SkipEmptyTilesChkbx.IsChecked != false
+                };
+
+                string currentPath = "";
+
                 try
                 {
                     Tuple<string, string> possibleErrorMessage = null;
-                    string[] files = dlg.TextureUrlTxtbx.Text.Split(';');
+                    var files = CommandLine.CommandLine.SplitEscape(dlg.TextureUrlTxtbx.Text, new char[] { ';' });
 
-                    foreach (string file in files)
+                    for (int i = 0; i < files.Count; i++)
                     {
-                        possibleErrorMessage = DrawingUtils.SplitTextureByGrid(
-                        file,
-                        Path.Combine(dlg.OutputDirTxtbx.Text, Path.GetFileNameWithoutExtension(file)),
+                        currentPath = files[i];
+                        possibleErrorMessage = TextureSplitting.SplitByGrid(
+                        currentPath,
+                        Path.Combine(dlg.OutputDirTxtbx.Text, Path.GetFileNameWithoutExtension(currentPath)),
                         int.Parse(dlg.TileWidthTxtbx.Text),
                         int.Parse(dlg.TileHeightTxtbx.Text),
                         new System.Drawing.Point(int.Parse(dlg.OffsetXTxtbx.Text), int.Parse(dlg.OffsetYTxtbx.Text)),
                         new System.Drawing.Point(int.Parse(dlg.StartOffsetXTxtbx.Text), int.Parse(dlg.StartOffsetYTxtbx.Text)),
-                        dlg.WholeTilesOnlyChkbx.IsChecked ?? false);
+                        dlg.WholeTilesOnlyChkbx.IsChecked ?? false,
+                        dlg.SkipEmptyTilesChkbx.IsChecked ?? false);
 
                         if (possibleErrorMessage != null)
                         {
                             MessageBox.Show(
-                                possibleErrorMessage.Item1,
+                                possibleErrorMessage.Item1 + $" (For file \"{currentPath}\".",
                                 possibleErrorMessage.Item2,
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Error);
+                            break;
                         }
                     }
 
-                    if (possibleErrorMessage == null)
-                    {
-                        dlg.Close();
-                    }
+                    return possibleErrorMessage == null;
                 }
                 catch
                 {
                     MessageBox.Show(
-                        "Couldn't split the spritesheets; try checking that all files/folders exist.",
+                        $"Failed to split spritesheets at \"{currentPath}\". Ensure you have access to all files and folders.",
                         "Failed to split spritesheet(s)",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
+
+                    return false;
+                }
+            };
+
+            dlg.ShowDialog();
+        }
+
+        /// <summary>
+        /// Opens a dialog that lets the user separate the tiles, of any size, to their own file.
+        /// </summary>
+        private void InvokeMenuUtilitySplitRegion(object sender, RoutedEventArgs e)
+        {
+            DialogSplitByRegion dlg = (rememberSplitRegionOptions == null)
+                ? new DialogSplitByRegion()
+                : new DialogSplitByRegion(rememberSplitRegionOptions);
+
+            dlg.OnClose = () => dlg.Close();
+            dlg.OnApply = () =>
+            {
+                rememberSplitRegionOptions = new SplitRegionCommandJson()
+                {
+                    TextureUrl = dlg.TextureUrlTxtbx.Text,
+                    OutputDir = dlg.OutputDirTxtbx.Text,
+                    BackgroundColor = dlg.BgColorTxtbx.Text,
+                    SkipSmallBounds = dlg.SkipSmallBoundsChkbx.IsChecked != false,
+                    ConnectDiagonalPixels = dlg.ConnectDiagonalPixelsChkbx.IsChecked != false
+                };
+
+                string currentPath = "";
+
+                try
+                {
+                    Tuple<string, string> possibleErrorMessage = null;
+                    var files = CommandLine.CommandLine.SplitEscape(dlg.TextureUrlTxtbx.Text, new char[] { ';' });
+
+                    for (int i = 0; i < files.Count; i++)
+                    {
+                        currentPath = files[i];
+                        possibleErrorMessage = TextureSplitting.SplitByRegion(
+                        currentPath,
+                        Path.Combine(dlg.OutputDirTxtbx.Text, Path.GetFileNameWithoutExtension(currentPath)),
+                        dlg.BgColorTxtbx.Text,
+                        dlg.SkipSmallBoundsChkbx.IsChecked != false,
+                        dlg.ConnectDiagonalPixelsChkbx.IsChecked != false);
+
+                        if (possibleErrorMessage != null)
+                        {
+                            MessageBox.Show(
+                                possibleErrorMessage.Item1 + $" (For file \"{currentPath}\".",
+                                possibleErrorMessage.Item2,
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Error);
+                            break;
+                        }
+                    }
+
+                    return possibleErrorMessage == null;
+                }
+                catch
+                {
+                    MessageBox.Show(
+                        $"Failed to split spritesheets at \"{currentPath}\". Ensure you have access to all files and folders.",
+                        "Failed to split spritesheet(s) by region",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+
+                    return false;
                 }
             };
 

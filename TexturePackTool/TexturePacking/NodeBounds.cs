@@ -1,4 +1,4 @@
-﻿namespace TexturePackTool.TexturePacking
+﻿namespace TexturePackTool
 {
     /// <summary>
     /// Represents a rectangular area for a node.

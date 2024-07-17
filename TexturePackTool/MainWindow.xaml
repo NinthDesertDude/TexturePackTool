@@ -44,7 +44,8 @@
                 <MenuItem Header="Export with borders" Click="InvokeMenuExportBordered"/>
             </MenuItem>
             <MenuItem x:Name="UtilityButton" Header="Utility">
-                <MenuItem Header="Split spritesheet grid(s)" Click="InvokeMenuUtilitySplitGrid"/>
+                <MenuItem Header="Split spritesheet(s) by grid" Click="InvokeMenuUtilitySplitGrid"/>
+                <MenuItem Header="Split spritesheet(s) by region" Click="InvokeMenuUtilitySplitRegion"/>
             </MenuItem>
         </Menu>
         <TabControl

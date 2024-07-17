@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Drawing;
+using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Media.Imaging;
 using TexturePackTool.Model;
-using TexturePackTool.TexturePacking;
 
 namespace TexturePackTool.Utilities
 {
@@ -13,6 +14,11 @@ namespace TexturePackTool.Utilities
     /// </summary>
     public static class DrawingUtils
     {
+        /// <summary>
+        /// A hex string like ff00ff or 000000ff
+        /// </summary>
+        private static readonly Regex hexColor = new Regex("^[0-9a-fA-F]{6}$|^[0-9a-fA-F]{8}$");
+
         /// <summary>
         /// Draws all frames for a given spritesheet with texture packing to the provided url.
         /// Returns null on success, or a two-string tuple representing an error message, then caption.
@@ -125,116 +131,28 @@ namespace TexturePackTool.Utilities
         }
 
         /// <summary>
-        /// Loads the given texture and splits it into separate files with the given tile width and height. If the
-        /// dimensions are not evenly divisible, outputs the remainder anyway.
+        /// Returns true if the given string is a 6 or 8 character hex color encoded as RGBA (no # or $ prefix).
         /// </summary>
-        /// <param name="tileWidth">The width of each tile in the original texture.</param>
-        /// <param name="tileHeight">The height of each tile in the original texture.</param>
-        /// <param name="offset">The number of extra pixels in the X and Y axes between each tile, if any.</param>
-        /// <param name="startOffset">The amount of padding on the X and Y axes before the grid, if any.</param>
-        public static Tuple<string, string> SplitTextureByGrid(
-            string textureUrl,
-            string outputDir,
-            int tileWidth,
-            int tileHeight,
-            Point offset,
-            Point startOffset,
-            bool wholeTilesOnly = false)
+        public static bool IsHexColor(string input)
         {
-            if (!File.Exists(textureUrl))
+            return !string.IsNullOrEmpty(input) && hexColor.IsMatch(input);
+        }
+
+        /// <summary>
+        /// Returns a new bitmap that resembles the original, but in the given format.
+        /// Does not dispose the original.
+        /// </summary>
+        public static Bitmap FormatImage(Bitmap img, PixelFormat format)
+        {
+            Bitmap clone = new Bitmap(img.Width, img.Height, format);
+            using (Graphics gr = Graphics.FromImage(clone))
             {
-                return new Tuple<string, string>(
-                    $"The texture doesn't exist or can't be found",
-                    "Splitting texture failed to begin");
-            }
-            if (tileWidth <= 0
-                || tileHeight <= 0
-                || offset == null
-                || offset.X < 0
-                || offset.Y < 0
-                || startOffset == null
-                || startOffset.X < 0
-                || startOffset.Y < 0)
-            {
-                return new Tuple<string, string>(
-                    $"The parameters given for how to split up the texture are not in bounds (e.g. negative width).",
-                    "Splitting texture failed to begin");
+                gr.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.Half;
+                gr.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
+                gr.DrawImage(img, 0, 0, img.Width, img.Height);
             }
 
-            int tileNum = 0;
-
-            try
-            {
-                using (var bitmap = Bitmap.FromFile(textureUrl))
-                {
-                    if (bitmap == null || bitmap.Width == 0 || bitmap.Height == 0)
-                    {
-                        return new Tuple<string, string>(
-                            $"The texture didn't load correctly (or width/height is zero).",
-                            "Splitting texture failed");
-                    }
-
-                    Directory.CreateDirectory(outputDir);
-
-                    for (int y = startOffset.Y; y < bitmap.Height; y += tileHeight + offset.Y)
-                    {
-                        for (int x = startOffset.X; x < bitmap.Width; x += tileWidth + offset.X)
-                        {
-                            tileNum++;
-                            int width = (x + tileWidth > bitmap.Width) ? bitmap.Width - x : tileWidth;
-                            int height = (y + tileHeight > bitmap.Height) ? bitmap.Height - y : tileHeight;
-
-                            if ((width != tileWidth || height != tileHeight) && wholeTilesOnly)
-                            {
-                                continue;
-                            }
-
-                            using (Bitmap tile = new Bitmap(width, height))
-                            {
-                                using (var tileGraphics = Graphics.FromImage(tile))
-                                {
-                                    tileGraphics.CompositingMode = System.Drawing.Drawing2D.CompositingMode.SourceCopy;
-                                    tileGraphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.None;
-                                    tileGraphics.PixelOffsetMode = System.Drawing.Drawing2D.PixelOffsetMode.None;
-                                    tileGraphics.DrawImage(
-                                        bitmap,
-                                        new Rectangle(0, 0, width, height),
-                                        new Rectangle(x, y, width, height),
-                                        GraphicsUnit.Pixel);
-
-                                    // Saves the final sprite sheet and updates the image source.
-                                    string tileExportPath = Path.Combine(outputDir, $"{tileNum}.png");
-                                    try
-                                    {
-                                        tile.Save(tileExportPath, System.Drawing.Imaging.ImageFormat.Png);
-                                    }
-                                    catch
-                                    {
-                                        return new Tuple<string, string>(
-                                            $"Tile # '{tileNum}' can't be saved at: {tileExportPath}",
-                                            "Splitting texture failed partway through");
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch
-            {
-                if (tileNum == 0)
-                {
-                    return new Tuple<string, string>(
-                    $"Failed to start splitting the texture at '{textureUrl}'. No files were written.",
-                    "Splitting texture failed");
-                }
-
-                return new Tuple<string, string>(
-                    $"Failed to finish splitting the texture at '{textureUrl}'. {tileNum} tiles were exported.",
-                    "Splitting texture failed while running");
-            }
-
-            return null;
+            return clone;
         }
     }
 }

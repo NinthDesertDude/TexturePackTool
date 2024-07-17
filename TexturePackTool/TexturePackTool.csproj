@@ -25,6 +25,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -34,6 +35,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationIcon>Icon.ico</ApplicationIcon>
@@ -64,9 +66,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="CommandLine\SplitRegionCommandJson.cs" />
     <Compile Include="CommandLine\SplitGridCommandJson.cs" />
     <Compile Include="CommandLine\ExportCommandJson.cs" />
     <Compile Include="CommandLine\CommandLine.cs" />
+    <Compile Include="DialogSplitByRegion.xaml.cs">
+      <DependentUpon>DialogSplitByRegion.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Model\Frame.cs" />
     <Compile Include="Model\SpriteSheet.cs" />
     <Compile Include="DialogSplitByGrid.xaml.cs">
@@ -79,8 +85,14 @@
     <Compile Include="TexturePacking\ExportOptions.cs" />
     <Compile Include="TexturePacking\Node.cs" />
     <Compile Include="TexturePacking\NodeBounds.cs" />
+    <Compile Include="TextureSplitting\TextureSplitting.cs" />
+    <Compile Include="TextureSplitting\Region.cs" />
     <Compile Include="Utilities\DrawingUtils.cs" />
     <Compile Include="TexturePacking\TexturePacker.cs" />
+    <Page Include="DialogSplitByRegion.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

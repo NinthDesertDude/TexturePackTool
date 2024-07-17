@@ -1,4 +1,4 @@
-﻿namespace TexturePackTool.TexturePacking
+﻿namespace TexturePackTool
 {
     /// <summary>
     /// These options are passed on to the texture packing algorithm to modify how it behaves.

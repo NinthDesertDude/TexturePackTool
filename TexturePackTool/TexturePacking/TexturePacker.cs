@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using TexturePackTool.Model;
 
-namespace TexturePackTool.TexturePacking
+namespace TexturePackTool
 {
     /// <summary>
     /// Takes many frames with rectangular areas and packs them using a simple, efficient
